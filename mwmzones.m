@@ -17,10 +17,10 @@ function DATA = mwmzones(DATA,varargin);
 % Optional parameter/value inputs to the function are as follows:
 %
 % - 'zones'   : Vector indicating the radius of the zones that should be used to calculate the measure.
-%               Note that the returned values, Z, will have the same number of rows as there are
-%               elements in this vector. So, if the vector is [50 40 30 20 10] then Z will have 5 rows,
-%		each one corresponding to the time spent in each zone of radius 50, 40, etc. centred
-%               on the platform. Default = [20 15 10];
+%               Note that the returned values, Z, will have the same number of final columns as there are
+%               elements in this vector. So, if the vector is [50 40 30 20 10] then Z will have a
+%               size, of 5 for the third dimension, each one corresponding to the time spent in each zone 
+%               of radius 50, 40, etc. centred on the platform. Default = [20 15 10];
 %
 % - 'allquads': Boolean valued flag indicating whether to simultaneously calculate the measure for all
 %               four possible quadrant locations of the platform. If set to true then Z is a 4-element

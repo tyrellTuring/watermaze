@@ -15,10 +15,10 @@ function DATA = mwmzonelat(DATA,varargin)
 % Optional parameter/value inputs to the function are as follows:
 %
 % - 'zones'   : Vector indicating the radius of the zones that should be used to calculate the measure.
-%               Note that the returned values, Z, will have the same number of rows as there are
-%               elements in this vector. So, if the vector is [50 40 30 20 10] then Z will have 5 rows,
-%		each one corresponding to the time spent in each zone of radius 50, 40, etc. centred
-%               on the platform. Default = [20 15 10];
+%               Note that the returned values, Z, will have the same number of final columns as there are
+%               elements in this vector. So, if the vector is [50 40 30 20 10] then Z will have a
+%               size, of 5 for the third dimension, each one corresponding to the latency to each zone 
+%               of radius 50, 40, etc. centred on the platform. Default = [20 15 10];
 %
 % - 'allquads': Boolean valued flag indicating whether to simultaneously calculate the measure for all
 %               four possible quadrant locations of the platform. If set to true then Z is a 4-element
@@ -93,9 +93,9 @@ for ff = 1:length(DATA)
 
 	% initialize Z
 	if optargs.allquads
-		DATA{ff}.Z = zeros(DATA{ff}.ntrials,4,length(optargs.zones));
+		DATA{ff}.L = zeros(DATA{ff}.ntrials,4,length(optargs.zones));
 	else
-		DATA{ff}.Z = zeros(DATA{ff}.ntrials,length(optargs.zones));
+		DATA{ff}.L = zeros(DATA{ff}.ntrials,length(optargs.zones));
 	end
 
 	% for each trial
@@ -144,7 +144,7 @@ end
 function L = calc_L(path, platform, zones)
 
 % initialize L
-L = zeros(length(zones),1);
+L = nan(length(zones),1);
 
 % get the time-steps
 tsteps = path(:,1);
@@ -156,7 +156,7 @@ for zz = 1:length(zones)
 	inzone = find(sqrt(sum((path(2:end,2:3) - repmat(platform(1:2),[size(path,1)-1 1])).^2,2)) <= zones(zz),1,'first');
 
 	% calculate L
-	L  = tsteps(inzone);
+	if ~isempty(inzone), L(zz)  = tsteps(inzone); end;
 
 end
 

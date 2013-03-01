@@ -47,7 +47,7 @@ function [STUDY,PROJECT,DATA] = readstudy(fname,datadir,varargin)
 %             of a single DATA entry sub-structure. See the option
 %
 %   STUDY:
-
+%
 %   1st-level
 %   -------------------
 %
