@@ -43,8 +43,9 @@ function [STUDY,PROJECT,DATA] = readstudy(fname,datadir,varargin)
 %             'help readwmpf' for details and sub-structure.
 %
 %   DATA{i} - DATA is a cell array of cell arrays. The DATA{i} contains the raw water-maze data for 
-%             a given collection of project files in the study. See 'help readwmdf' for details and 
-%             of a single DATA entry sub-structure. See the option
+%             a given collection of project files in the study. See 'help readwmdf' for details 
+%             of a single DATA entry sub-structure. See the option 'collect_data' to understand
+%             which project files will be included in each entry of DATA.
 %
 %   STUDY:
 %
@@ -391,7 +392,27 @@ for pp = 1:length(PROJECT)
                                                     'pool_radius',optargs.pool_radius,...
                                                     'scale_data',optargs.scale_data,...
                                                     'flip_data',optargs.flip_data);
+end
 
+% collect the data together as requested
+if isa(optargs.collect_data,'cell')
+	for cc = 1:length(STUDY.FILE.collect)
+		
+		% determine which elements of DATA correspond to this collection
+		incollection = [];
+		for pp = 1:length(PROJECT)
+			if ismember(PROJECT{pp}.file,STUDY.FILE.collect)
+				incollection = [incollection, pp];
+			end
+		end
+		
+		% contactenate all of the members of this collection into a new DATA structure
+		newDATA{cc} = {};
+		for nn = 1:length(incollection)
+			newDATA{cc} = {newDATA{cc}, DATA{incollection{nn}}};
+		end
+	end
+	DATA = newDATA;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
