@@ -159,9 +159,12 @@ for ff = 1:nfiles
 	end
 
 	% determine the size of the file in bytes
-	status    = fseek(fid, 0, 'eof');
-	if status < 0, error('Could not move to end of file %s',filename); end;                  
-  	file_size = ftell(fid);
+	try
+		status    = fseek(fid, 0, 'eof');
+	catch
+		error('Could not move to end of file %s',filename);
+	end                  
+  file_size = ftell(fid);
 
 	% go to the beginning of the first trial in the file        
 	status      = fseek(fid, 0, 'bof');

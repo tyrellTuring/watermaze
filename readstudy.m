@@ -383,6 +383,7 @@ end
 for pp = 1:length(PROJECT)
 
 	% construct the file names for the .wmdf files
+	clear data_files;
 	for aa = 1:length(PROJECT{pp}.animal)
 		data_files{aa} = sprintf('%s.wmdf',PROJECT{pp}.animal{aa});
 	end
@@ -401,7 +402,8 @@ if isa(optargs.collect_data,'cell')
 		% determine which elements of DATA correspond to this collection
 		incollection = [];
 		for pp = 1:length(PROJECT)
-			if ismember(PROJECT{pp}.file,STUDY.FILE.collect)
+			[pth,nam,ext] = fileparts(PROJECT{pp}.file);
+			if ismember(sprintf('%s.wmpf',nam),STUDY.FILE.collect{cc})
 				incollection = [incollection, pp];
 			end
 		end
@@ -409,7 +411,7 @@ if isa(optargs.collect_data,'cell')
 		% contactenate all of the members of this collection into a new DATA structure
 		newDATA{cc} = {};
 		for nn = 1:length(incollection)
-			newDATA{cc} = {newDATA{cc}, DATA{incollection{nn}}};
+			newDATA{cc} = [newDATA{cc}, DATA{incollection(nn)}];
 		end
 	end
 	DATA = newDATA;
