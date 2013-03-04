@@ -23,6 +23,8 @@ function DATA = mwmkld(DATA,platforms,varargin);
 %
 % - 'logbase': Which logarithmic base to use for the calculation (can be 2, e, or 10). Default = e (nats).
 %
+% - 'weights': A vector of weights for each platforms contribution to the KDE. Default = 1 for all.
+%
 % 02/2013, Frankland Lab (www.franklandlab.com)
 %
 % Author: Blake Richards
@@ -43,7 +45,7 @@ if ~isa(platforms,'numeric') && size(platforms,2) == 3
 end
 	
 % define the default optional arguments
-optargs = struct('bandwidth',-1,'logbase',exp(1));
+optargs = struct('bandwidth',-1,'logbase',exp(1),'weights',ones(1,size(platforms,1)));
 
 % get the optional argument names
 optnames = fieldnames(optargs);
@@ -77,6 +79,12 @@ for pair = reshape(varargin,2,[])
 				else
 					error('logbase must be 2, e or 10');
 				end
+			case 'weights'
+				if isa(pair{2},'numeric') && length(pair{2}) == size(platforms,1)
+					optargs.(inpname) = pair{2};
+				else
+					error('weights must be a vector with length = size(PLATFORMS,1)');
+				end
 		end	
 	else
 		error('%s is not a recognized parameter name',inpname);
@@ -101,14 +109,14 @@ for ff = 1:length(DATA)
 	if optargs.bandwidth == -1
 
 		% create a KDE with an arbitrary bandwidth
-		tmpkde = kde(platforms(:,1:2)', [1; 1]);
+		tmpkde = kde(platforms(:,1:2)', [1; 1],optargs.weights);
 
 		% calculate the optimal bandwidth
 		DATA{ff}.KLD.kde = ksize(tmpkde);
 	else
 
 		% just use the specified bandwidth
-		DATA{ff}.KLD.kde = kde(platforms(:,1:2)', [optargs.bandwidth;optargs.bandwidth]);
+		DATA{ff}.KLD.kde = kde(platforms(:,1:2)', [optargs.bandwidth;optargs.bandwidth],optargs.weights);
 	end
 
 	% use the KDE to estimate the PDF of the platforms across the pool

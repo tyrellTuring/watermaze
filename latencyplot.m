@@ -163,7 +163,7 @@ end
 % PLOT THE DATA
 
 % get the latencies
-L = latencies(DATA);
+L = latency(DATA);
 
 % make the figure
 figure();
