@@ -1,9 +1,9 @@
-function L = latencies(DATA)
+function K = getkld(DATA)
 
-% function L = latencies(DATA)
+% function K = getkld(DATA)
 %
-% Returns the escape latencies in seconds for each trial and each animal in the structure DATA (see
-% below).
+% Returns the Kullback-Leibler divergences from a data set. Both mwmpdf and mwmkld must have been
+% run first.
 %
 % MANDATORY INPUTS:
 % -------------------------------------------------------------------------------------------------
@@ -14,7 +14,7 @@ function L = latencies(DATA)
 % OUTPUT:
 % -------------------------------------------------------------------------------------------------
 %
-%   L - A T x A matrix of latencies, where T is the maximum number of trials and A is the number of
+%   K - A T x A matrix of latencies, where T is the maximum number of trials and A is the number of
 %       animals.
 % 
 %--------------------------------------------------------------------------------
@@ -32,11 +32,11 @@ for aa = 1:length(DATA)
 end 
 
 % initialize
-L = zeros(max(ntrial),length(DATA));
+K = zeros(max(ntrial),length(DATA));
 
 % get the latencies from each animal's trials
 for aa = 1:length(DATA)
 	for tt = 1:DATA{aa}.ntrials
-		L(tt,aa) = DATA{aa}.path(DATA{aa}.ntimes(tt),1,tt);
+		K(tt,aa) = DATA{aa}.KLD.kld(tt);
 	end
 end

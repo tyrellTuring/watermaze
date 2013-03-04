@@ -18,7 +18,7 @@ function DATA = mwmpdf(DATA,varargin);
 % bandiwdth method is used, the user can also specify to utilize the mean of the optimal bandwidths
 % across all the paths, using the 'meanbw' option (see below).
 %
-% Note that the KDEa for each trial are also stored in the cell array PDF.kde.
+% Note that the KDEs for each trial are also stored in the cell array PDF.kde.
 %
 % Optional parameter/value inputs to the function are as follows:
 %
@@ -73,13 +73,13 @@ for pair = reshape(varargin,2,[])
 					error('lambda must be a scalar value');
 				end
 			case 'bandwidth'
-				if isa(pair{2},'numeric');
+				if isa(pair{2},'numeric')
 					optargs.(inpname) = pair{2};
 				else
 					error('bandwidth must be a scalar value');
 				end
 			case 'meanbw'
-				if isa(pair{2},'logical');
+				if isa(pair{2},'logical')
 					optargs.(inpname) = pair{2};
 				else
 					error('meanbw must be a boolean value');
@@ -108,6 +108,7 @@ for ff = 1:length(DATA)
 	DATA{ff}.PDF.p = zeros(npoints,npoints,DATA{ff}.ntrials);
 	DATA{ff}.PDF.x = nanXX;
 	DATA{ff}.PDF.y = nanYY;
+	DATA{ff}.PDF.res = optargs.resolution;
 
 	% for each trial get the KDE
 	for tt = 1:DATA{ff}.ntrials

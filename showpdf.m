@@ -25,6 +25,9 @@ function [sh P] = showpdf(DATA,trials,animals,varargin)
 % -------------------------------------------------------------------------------------------------
 % Optional inputs to control plotting behaviour can be provided in parameter/value format. The optional inputs are:
 %
+%   'show_kldpdf' - Boolean value, determines whether to show the pdf used for the KLD calculation
+%                   rather than animal's paths. Default = false.
+%
 %   'show_axis' - Boolean value, determines whether the spatial axis is shown. Default = false.
 %
 %   'measure'   - String, defining the measure to use for combining multiple PDFs. Options are:
@@ -58,6 +61,7 @@ function [sh P] = showpdf(DATA,trials,animals,varargin)
 
 % define the default optional arguments
 optargs = struct('show_axis',false,...
+                 'show_kldpdf',false,...
                  'measure','mean',...
                  'platforms',[],...
                  'plat_opacity',0.3,...
@@ -91,6 +95,12 @@ for pair = reshape(varargin,2,[])
 					optargs.(inpname) = pair{2};
 				else
 					error('show_axis must be a logical');
+				end
+			case 'show_kldpdf'
+				if isa(pair{2},'logical')
+					optargs.(inpname) = pair{2};
+				else
+					error('show_kldpdf must be a logical');
 				end
 			case 'measure'
 				if isa(pair{2},'char') && ismember(pair{2},{'mean','max','min','var'})
@@ -147,29 +157,34 @@ end
 X = DATA{1}.PDF.x;
 Y = DATA{1}.PDF.y;
 
-% get the data from all the trials and animals
-allP = zeros(size(X,1),size(X,2),length(trials),length(animals));
-for aa = 1:length(animals)
-	for tt = 1:length(trials)
-		allP(:,:,tt,aa) = DATA{animals(aa)}.PDF.p(:,:,trials(tt));
-	end
-end
-
-% take the requested measure across trials and animals
-switch optargs.measure
-	case 'mean'
-		P = nanmean(nanmean(allP,4),3);
-	case 'max'
-		P = nanmax(nanmax(allP,[],4),[],3);
-	case 'min'
-		P = nanmin(nanmin(allP,[],4),[],3);
-	case 'var'
-		varanim = nanvar(allP,[],4);
-		if size(allP,3) == 1
-			P = squeeze(varanim);
-		else
-			P = nanvar(varanim,[],3);
+% see whether we're using the PDF from the KLD
+if optargs.show_kldpdf
+	P = DATA{1}.KLD.p;
+else
+	% get the data from all the trials and animals
+	allP = zeros(size(X,1),size(X,2),length(trials),length(animals));
+	for aa = 1:length(animals)
+		for tt = 1:length(trials)
+			allP(:,:,tt,aa) = DATA{animals(aa)}.PDF.p(:,:,trials(tt));
 		end
+	end
+
+	% take the requested measure across trials and animals
+	switch optargs.measure
+		case 'mean'
+			P = nanmean(nanmean(allP,4),3);
+		case 'max'
+			P = nanmax(nanmax(allP,[],4),[],3);
+		case 'min'
+			P = nanmin(nanmin(allP,[],4),[],3);
+		case 'var'
+			varanim = nanvar(allP,[],4);
+			if size(allP,3) == 1
+				P = squeeze(varanim);
+			else
+				P = nanvar(varanim,[],3);
+			end
+	end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -208,8 +223,8 @@ set(gca,'CameraPosition',[0 0 max(P(:))*1.5],'CameraTarget',[0 0 0]);
 axis equal;
 set(gca,'Position',[0 0 1 1]);
 caxis(gca,climit);
-xlim([-DATA{aa}.pool(3)-5, DATA{aa}.pool(3)+5])
-ylim([-DATA{aa}.pool(3)-5, DATA{aa}.pool(3)+5])
+xlim([-DATA{1}.pool(3)-5, DATA{1}.pool(3)+5])
+ylim([-DATA{1}.pool(3)-5, DATA{1}.pool(3)+5])
 camproj('orthographic')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
