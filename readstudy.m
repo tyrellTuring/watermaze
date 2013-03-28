@@ -99,6 +99,9 @@ function [STUDY,PROJECT,DATA] = readstudy(fname,datadir,varargin)
 % -------------------------------------------------------------------------------------------------
 % Optional inputs can be provided in parameter/value format. The optional inputs are:
 %
+%   'cage_in_id'    - Boolean value, indicating whether the cage number is included in the animal's
+%                     id in the data files. Default = true.
+%
 %   'centre_origin' - Boolean value, indicating whether or not to make the centre of the pool equal to the origin in the
 %                     co-ordinate system (i.e. x = 0, y = 0). Default = true.
 %
@@ -152,6 +155,7 @@ STUDY.FILE.directory = datadir;
 
 % define the default optional arguments
 optargs = struct('centre_origin',true,...
+                 'cage_in_id',true,...
                  'pool_radius',60,...
                  'scale_data',true,...
                  'flip_data',true,...
@@ -184,6 +188,12 @@ for pair = reshape(varargin,2,[])
 					optargs.(inpname) = pair{2};
 				else
 					error('centre_origin must be a logical');
+				end
+			case 'cage_in_id'
+				if isa(pair{2},'logical')
+					optargs.(inpname) = pair{2};
+				else
+					error('cage_in_id must be a logical');
 				end
 			case 'pool_radius'
 				if isa(pair{2},'numeric');
@@ -266,7 +276,15 @@ cc = cc + 1;
 
 % create each animal's unique ID
 for aa = 1:length(STUDY.ANIMAL.cage)
-	STUDY.ANIMAL.id{aa} = sprintf('%d%s',STUDY.ANIMAL.cage(aa),STUDY.ANIMAL.tag{aa});
+	if optargs.cage_in_id
+		STUDY.ANIMAL.id{aa} = sprintf('%d%s',STUDY.ANIMAL.cage(aa),STUDY.ANIMAL.tag{aa});
+	else
+		if isstr(STUDY.ANIMAL.tag{aa})
+			STUDY.ANIMAL.id{aa} = STUDY.ANIMAL.tag{aa};
+		else
+			STUDY.ANIMAL.id{aa} = sprintf('%d',STUDY.ANIMAL.tag{aa});
+		end
+	end	
 end
 
 % if requested, get each animal's sex

@@ -1,6 +1,6 @@
-function P = latencies(DATA)
+function P = proximity(DATA)
 
-% function P = latencies(DATA)
+% function P = proximity(DATA)
 %
 % Returns the mean proximity values for each trial and each animal in the structure DATA (see
 % below).
@@ -16,7 +16,7 @@ function P = latencies(DATA)
 % OUTPUT:
 % -------------------------------------------------------------------------------------------------
 %
-%   K - A T x A matrix of proximities, or a T x A x 4 matrix (if 'allquads' was used, see help
+%   P - A T x A matrix of proximities, or a T x A x 4 matrix (if 'allquads' was used, see help
 %       mwmproximity), where T is the maximum number of trials and A is the number of animals.
 % 
 %--------------------------------------------------------------------------------

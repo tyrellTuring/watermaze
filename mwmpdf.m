@@ -117,14 +117,14 @@ for ff = 1:length(DATA)
 		if optargs.bandwidth == -1
 
 			% create a KDE with an arbitrary bandwidth
-			tmpkde = kde(DATA{ff}.path(:,2:3,tt)', [1; 1]);
+			tmpkde = kde(DATA{ff}.path(1:DATA{ff}.ntimes(tt),2:3,tt)', [1; 1]);
 
 			% calculate the optimal bandwidth
 			DATA{ff}.PDF.kde{tt} = ksize(tmpkde);
 		else
 
 			% just use the specified bandwidth
-			DATA{ff}.PDF.kde{tt} = kde(DATA{ff}.path(:,2:3,tt)', [optargs.bandwidth;optargs.bandwidth]);
+			DATA{ff}.PDF.kde{tt} = kde(DATA{ff}.path(1:DATA{ff}.ntimes(tt),2:3,tt)', [optargs.bandwidth;optargs.bandwidth]);
 		end
 	end
 
@@ -136,7 +136,7 @@ for ff = 1:length(DATA)
 		end
 		meanBW = sumBW/DATA{ff}.ntrials;
 		for tt = 1:DATA{ff}.ntrials
-			DATA{ff}.PDF.kde{tt} =  kde(DATA{ff}.path(:,2:3,tt)', [meanBW; meanBW]);
+			DATA{ff}.PDF.kde{tt} =  kde(DATA{ff}.path(1:DATA{ff}.ntimes(tt),2:3,tt)', [meanBW; meanBW]);
 		end
 	end
 

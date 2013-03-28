@@ -2,15 +2,18 @@ function DATA = mwmentropy(DATA,varargin);
 
 % function DATA = mwmentropy(DATA,varargin); 
 %
-% Calculates the entropy measure for a Morris-Water-Maze dataset, H, as outlined in
-% Maei et al. (2009). The obligatory input structure, DATA, is a multi-level cell array that
-% is assumed to be in the format returned by readwmdf.m (see help readwmdf). The results are 
-% stored in the second-level of DATA as either an N x 1 vector or an N x 4 matrix (depending
-% on whether the 'allquads' option is set, see below), where N = number of trials. For example,
-% if 'allquads' was not set, then DATA{i}.H(j) is the entropy for the jth trial of the ith file
-% in the DATA structure.
+% Calculates the entropy measure for a Morris-Water-Maze dataset, H. The entropy
+% can either be estimated using a parametric method as outlined in Maei et al. (2009) 
+% or using a kernel density estimate (in which case mwmpdf must be run first). The obligatory 
+% input structure, DATA, is a multi-level cell array that is assumed to be in the format 
+% returned by readwmdf.m (see help readwmdf). The results are stored in the second-level of 
+% DATA as either an N x 1 vector or an N x 4 matrix (depending on whether the 'allquads' option 
+% is set, see below), where N = number of trials. For example, if 'allquads' was not set, then 
+% DATA{i}.H(j) is the entropy for the jth trial of the ith file in the DATA structure.
 %
 % Optional parameter/value inputs to the function are as follows:
+%
+% - 'parametric' : whether to use a parametric method to calculate the entropy. Default = true.
 %
 % - 'lambda'  : Scalar valued mixing coefficient [H = lambda*H_error + (1-lambda)*H_path]. Default = 0.5.
 %
@@ -42,7 +45,7 @@ if ~isa(DATA,'cell')
 end
 	
 % define the default optional arguments
-optargs = struct('lambda',0.5,'allquads',false);
+optargs = struct('parametric',true,'lambda',0.5,'allquads',false);
 
 % get the optional argument names
 optnames = fieldnames(optargs);
@@ -64,6 +67,12 @@ for pair = reshape(varargin,2,[])
 	% check whether the name matches a known option
 	if any(strmatch(inpname,optnames))
 		switch inpname
+			case 'parametric'
+                if isa(pair{2},'logical');
+					optargs.(inpname) = pair{2};
+                else
+					error('parametric must be a logical');
+				end
 			case 'lambda'
                 if isa(pair{2},'numeric') && (pair{2} >= 0 && pair{2} <= 1);
 					optargs.(inpname) = pair{2};
@@ -86,7 +95,7 @@ end
 for ff = 1:length(DATA)
 
 	% initialize H
-	if optargs.allquads
+	if optargs.parametric && optargs.allquads
 		DATA{ff}.H = zeros(DATA{ff}.ntrials,4);
 	else
 		DATA{ff}.H = zeros(DATA{ff}.ntrials,1);
@@ -110,20 +119,24 @@ for ff = 1:length(DATA)
 			platform_q4   = (rotation_mat^3*plat_rel_pool + pool')'; % platform rotated by 270 degrees
 		end
 
-		% calculate the entropy 
-		H = calc_H(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platform, optargs.lambda);
-		if optargs.allquads		
-			H2 = calc_H(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platform_q2, optargs.lambda);
-			H3 = calc_H(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platform_q3, optargs.lambda);
-			H4 = calc_H(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platform_q4, optargs.lambda);
-			H = [H, H2, H3, H4];
-		end
+		% calculate the entropy
+		if optargs.parametric
+			H = calc_H(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platform, optargs.lambda);
+			if optargs.allquads		
+				H2 = calc_H(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platform_q2, optargs.lambda);
+				H3 = calc_H(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platform_q3, optargs.lambda);
+				H4 = calc_H(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platform_q4, optargs.lambda);
+				H = [H, H2, H3, H4];
+			end
 
-		% store the result in the DATA structure
-		if optargs.allquads
-			DATA{ff}.H(tt,:) = H;
+			% store the result in the DATA structure
+			if optargs.allquads
+				DATA{ff}.H(tt,:) = H;
+			else
+				DATA{ff}.H(tt) = H;
+			end
 		else
-			DATA{ff}.H(tt) = H;
+			DATA{ff}.H(tt) = -nansum(nansum(DATA{ff}.PDF.p(:,:,tt).*log(DATA{ff}.PDF.p(:,:,tt))));
 		end
 	end
 end
