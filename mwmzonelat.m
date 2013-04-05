@@ -27,17 +27,31 @@ function DATA = mwmzonelat(DATA,varargin)
 %
 %--------------------------------------------------------------------------------
 %
-% References
-% - Maei, HR, et al. (2009). What is the Most Sensitive Measure of Water Maze Probe Test Performance?
-%     Frontiers in Integrative Neuroscience, 3:4.
-%
-%--------------------------------------------------------------------------------
-%
-% 12/2011, Frankland Lab (www.franklandlab.com)
+% 02/2013, Frankland Lab (www.franklandlab.com)
 %
 % Author: Blake Richards
 % Contact: blake.richards@utoronto.ca
 %
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Copyright 2013 Blake Richards (blake.richards@utoronto.ca)
+%
+% This file is part of the MWM Matlab Toolbox.
+%
+% The MWM Toolbox is free software: you can redistribute it and/or modify
+% it under the terms of the GNU Lesser General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+%
+% The MWM Toolbox is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU Lesser General Public License for more details.
+%
+% You should have received a copy of the GNU Lesser General Public License
+% along with the MWM Toolbox (in the file COPYING.LESSER).  If not, 
+% see <http://www.gnu.org/licenses/>.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PARSE THE INPUT
