@@ -1,0 +1,9 @@
+To install and use the MWM Toolbox Matlab version 7 or greater must be installed. If it is installed
+then the toolbox can simply be downloaded to a folder on the Matlab path and it is ready to use.
+
+The only complication is if the pdf functions are to be used (e.g. mwmpdf.m). In this case Alexander
+Ihler's KDE Toolbox must also be installed. See http://www.ics.uci.edu/~ihler/code/kde.html to
+download the KDE Toolbox and for installation instructions. Note that installing the KDE toolbox
+requires a C++ compiler.
+
+Blake Richards, 2013 (blake.richards@utoronto.ca)
