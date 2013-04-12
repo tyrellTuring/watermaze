@@ -25,6 +25,11 @@ function DATA = mwmkld(DATA,platforms,varargin);
 %
 % - 'weights': A vector of weights for each platforms contribution to the KDE. Default = 1 for all.
 %
+% - 'means'  : A cell array of vectors that can be used to calculate the KLD using the mean of
+%              multiple trials' pdfs. For example, {[1 2],[4 5]} would lead to KLD being calculated
+%              for pdfs averaged over the first and second, then the fourth and fifth trials. These
+%              KLD values are stored in the sub-vector mkld in the order they were requested. 
+%
 %--------------------------------------------------------------------------------
 %
 % 02/2013, Frankland Lab (www.franklandlab.com)
@@ -67,7 +72,10 @@ if ~isa(platforms,'numeric') && size(platforms,2) == 3
 end
 	
 % define the default optional arguments
-optargs = struct('bandwidth',-1,'logbase',exp(1),'weights',ones(1,size(platforms,1)));
+optargs = struct('bandwidth',-1,...
+                 'logbase',exp(1),...
+                 'weights',ones(1,size(platforms,1)),...
+                 'means',{{}});
 
 % get the optional argument names
 optnames = fieldnames(optargs);
@@ -106,6 +114,12 @@ for pair = reshape(varargin,2,[])
 					optargs.(inpname) = pair{2};
 				else
 					error('weights must be a vector with length = size(PLATFORMS,1)');
+				end
+			case 'means'
+				if isa(pair{2},'cell')
+					optargs.(inpname) = pair{2};
+				else
+					error('means must be a cell array');
 				end
 		end	
 	else
@@ -163,6 +177,27 @@ for ff = 1:length(DATA)
 				DATA{ff}.KLD.kld(tt) = nansum(nansum(DATA{ff}.KLD.p.*log(DATA{ff}.KLD.p./DATA{ff}.PDF.p(:,:,tt))));
 			case 10
 				DATA{ff}.KLD.kld(tt) = nansum(nansum(DATA{ff}.KLD.p.*log10(DATA{ff}.KLD.p./DATA{ff}.PDF.p(:,:,tt))));
+		end
+	end
+
+	% for each set of means, calcualte the KLD
+	DATA{ff}.KLD.mkld = zeros(length(optargs.means),1);
+	for mm = 1:length(optargs.means)
+	
+		% get the mean pdf for these trials
+		allP = zeros(size(DATA{ff}.PDF.p,1),size(DATA{ff}.PDF.p,2),length(optargs.means));
+		for tt = 1:length(optargs.means{mm})
+			allP(:,:,tt) = DATA{ff}.PDF.p(:,:,optargs.means{mm}(tt));
+		end
+		P = nanmean(allP,3);
+
+		switch optargs.logbase
+			case 2
+				DATA{ff}.KLD.mkld(mm) = nansum(nansum(DATA{ff}.KLD.p.*log2(DATA{ff}.KLD.p./P))); 
+			case exp(1)
+				DATA{ff}.KLD.mkld(mm) = nansum(nansum(DATA{ff}.KLD.p.*log(DATA{ff}.KLD.p./P)));
+			case 10
+				DATA{ff}.KLD.mkld(mm) = nansum(nansum(DATA{ff}.KLD.p.*log10(DATA{ff}.KLD.p./P)));
 		end
 	end
 end

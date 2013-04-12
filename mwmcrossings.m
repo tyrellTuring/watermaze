@@ -5,16 +5,15 @@ function DATA = mwmcrossings(DATA,varargin);
 % Calculates the number of crossings measure for a Morris-Water-Maze dataset, X, as outlined in
 % Maei et al. (2009). The obligatory input structure, DATA, is a multi-level cell array that
 % is assumed to be in the format returned by readwmdf.m (see help readwmdf). The results are 
-% stored in the second-level of DATA as either an N x 1 vector or an N x 4 matrix (depending
-% on whether the 'allquads' option is set, see below), where N = number of trials. For example,
-% if 'allquads' was not set, then DATA{i}.X(j) is the number of crossing for the jth trial of 
-% the ith file in the DATA structure.
+% stored in the second-level of DATA as either an N x 1 vector or an N x P matrix (depending
+% on whether the 'platforms' option is set, see below), where N = number of trials and P = 
+% number of platforms.
 %
 % Optional parameter/value inputs to the function are as follows:
 %
-% - 'allquads': Boolean valued flag indicating whether to simultaneously calculate the measure for all
-%               four possible quadrant locations of the platform. If set to true then X is a N x 4
-%               matrix where the first column corresponds to the actual platform locations. Default = false.
+% - 'platforms': P x 3 matrix of platform x, y and radius values to use for the measurement. If this
+%                argument is not set then the platform contained in the .wmdf file for each trial is
+%                used.
 %
 %--------------------------------------------------------------------------------
 %
@@ -59,7 +58,7 @@ if ~isa(DATA,'cell')
 end
 	
 % define the default optional arguments
-optargs = struct('allquads',false);
+optargs = struct('platforms',[]);
 
 % get the optional argument names
 optnames = fieldnames(optargs);
@@ -81,11 +80,11 @@ for pair = reshape(varargin,2,[])
 	% check whether the name matches a known option
 	if any(strmatch(inpname,optnames))
 		switch inpname
-			case 'allquads'
-				if isa(pair{2},'logical');
+			case 'platforms'
+				if isa(pair{2},'numeric') && size(pair{2},2) == 3
 					optargs.(inpname) = pair{2};
 				else
-					error('allquads must be a logical');
+					error('platforms must be a P x 3 matrix');
 				end
 		end	
 	else
@@ -97,44 +96,33 @@ end
 for ff = 1:length(DATA)
 
 	% initialize X
-	if optargs.allquads
-		DATA{ff}.X = zeros(DATA{ff}.ntrials,4);
-	else
+	if isempty(optargs.platforms)
 		DATA{ff}.X = zeros(DATA{ff}.ntrials,1);
+	else
+		DATA{ff}.X = zeros(DATA{ff}.ntrials,size(optargs.platforms,1));
 	end
 
-	% for each trial
+	% for each trial...
 	for tt = 1:DATA{ff}.ntrials
-
-		% get the platform data
-		platform = DATA{ff}.platform(min([tt end]),1:3);
 
 		% get the pool data
 		pool = DATA{ff}.pool(min([tt end]),1:2);
 
-		% if allquads was set, calculate the positions of the equivalent platforms in each of the other quadrants
-		if optargs.allquads
-			plat_rel_pool = (platform(1:2) - pool)';                               % location of platform relative to pool centre
-			rotation_mat  = [0 -1; 1 0];                                           % 90 degree rotation matrix
-			platform_q2   = [(rotation_mat*plat_rel_pool + pool')' platform(3)];   % platform rotated by 90 degrees
-			platform_q3   = [(rotation_mat^2*plat_rel_pool + pool')' platform(3)]; % platform rotated by 180 degrees
-			platform_q4   = [(rotation_mat^3*plat_rel_pool + pool')' platform(3)]; % platform rotated by 270 degrees
-		end
-
-		% calculate the proximity 
-		X = calc_X(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platform);
-		if optargs.allquads		
-			X2 = calc_X(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platform_q2);
-			X3 = calc_X(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platform_q3);
-			X4 = calc_X(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platform_q4);
-			X = [X, X2, X3, X4];
-		end
-
-		% store the result in the DATA structure
-		if optargs.allquads
-			DATA{ff}.X(tt,:) = X;
+		% get the platform data
+		if isempty(optargs.platforms)
+			platforms = DATA{ff}.platform(min([tt end]),1:3);
 		else
-			DATA{ff}.X(tt) = X;
+			platforms = optargs.platforms;
+		end
+	
+		% for each platform...
+		for pp = 1:size(platforms,1)
+
+			% calculate the crossings 
+			X = calc_X(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platforms(pp,:));
+			
+			% store the result in the DATA structure
+			DATA{ff}.X(tt,pp) = X;
 		end
 	end
 end

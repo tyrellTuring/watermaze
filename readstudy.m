@@ -297,7 +297,11 @@ cc = cc + 1;
 % create each animal's unique ID
 for aa = 1:length(STUDY.ANIMAL.cage)
 	if optargs.cage_in_id
-		STUDY.ANIMAL.id{aa} = sprintf('%d%s',STUDY.ANIMAL.cage(aa),STUDY.ANIMAL.tag{aa});
+		if isstr(STUDY.ANIMAL.tag{aa})
+			STUDY.ANIMAL.id{aa} = sprintf('%d%s',STUDY.ANIMAL.cage(aa),STUDY.ANIMAL.tag{aa});
+		else
+			STUDY.ANIMAL.id{aa} = sprintf('%d%d',STUDY.ANIMAL.cage(aa),STUDY.ANIMAL.tag{aa});
+		end
 	else
 		if isstr(STUDY.ANIMAL.tag{aa})
 			STUDY.ANIMAL.id{aa} = STUDY.ANIMAL.tag{aa};
@@ -314,7 +318,7 @@ if optargs.track_sex
 	cc = cc + 1;
 end
 
-% if requested, get each animal's sex
+% if requested, get each animal's date of birth
 if optargs.track_dob
 	if strcmp(raw(1,cc),'DOB') ~= 1, error('Column after ''Mouse'' or ''Sex'' must be ''DOB'''); end;
 	for tt = 1:size(raw,1)-1
@@ -409,6 +413,7 @@ PROJECT = readwmpf(project_files);
 for pp = 1:length(PROJECT)
 	for aa = 1:length(PROJECT{pp}.animal)
 		if ~ismember(PROJECT{pp}.animal{aa},STUDY.ANIMAL.id)
+			%PROJECT{pp}.animal{aa}, STUDY.ANIMAL.id
 			error(sprintf('Animal %s in project %s not in records',PROJECT{pp}.animal{aa},PROJECT{pp}.file));
 		end
 	end

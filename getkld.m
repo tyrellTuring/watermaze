@@ -1,9 +1,9 @@
-function K = getkld(DATA)
+function [K MK] = getkld(DATA)
 
-% function K = getkld(DATA)
+% function [K MK] = getkld(DATA)
 %
 % Returns the Kullback-Leibler divergences from a data set. Both mwmpdf and mwmkld must have been
-% run first.
+% run first. K is the KLDs for specific trials, MK is the KLDs for the mean trial KLDs.
 %
 % MANDATORY INPUTS:
 % -------------------------------------------------------------------------------------------------
@@ -14,8 +14,11 @@ function K = getkld(DATA)
 % OUTPUT:
 % -------------------------------------------------------------------------------------------------
 %
-%   K - A T x A matrix of latencies, where T is the maximum number of trials and A is the number of
+%   K - A T x A matrix of KLD values, where T is the maximum number of trials and A is the number of
 %       animals.
+%
+%   MK - A M x A matrix of KLD values, where M is the number of trial means and A is the number of
+%        animals.
 % 
 %--------------------------------------------------------------------------------
 %
@@ -45,18 +48,32 @@ function K = getkld(DATA)
 % see <http://www.gnu.org/licenses/>.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% determine the maximum number of trials
+% determine the number of trials
 ntrial = zeros(length(DATA),1);
 for aa = 1:length(DATA)
 	ntrial(aa) = DATA{aa}.ntrials;
 end 
 
-% initialize
-K = zeros(max(ntrial),length(DATA));
+% determine the number of means
+nmeans = zeros(length(DATA),1);
+for aa = 1:length(DATA)
+	nmeans(aa) = length(DATA{aa}.KLD.mkld);
+end 
 
-% get the latencies from each animal's trials
+% initialize 
+K  = zeros(max(ntrial),length(DATA));
+MK = zeros(max(nmeans),length(DATA));
+
+% get the KLDs from each animal's trials
 for aa = 1:length(DATA)
 	for tt = 1:DATA{aa}.ntrials
 		K(tt,aa) = DATA{aa}.KLD.kld(tt);
+	end
+end
+
+% get the KLDs from each animal's means
+for aa = 1:length(DATA)
+	for mm = 1:nmeans(aa)
+		MK(mm,aa) = DATA{aa}.KLD.mkld(mm);
 	end
 end

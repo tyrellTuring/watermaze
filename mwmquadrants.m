@@ -6,17 +6,15 @@ function DATA = mwmquadrant(DATA,varargin);
 % Maei et al. (2009). This is simply the percent time spent in the "correct" quadrant.
 % The obligatory input structure, DATA, is a multi-level cell array that is assumed to 
 % be in the format returned by readwmdf.m (see help readwmdf). The results are stored 
-% in the second-level of the cell array DATA as either a N x 1 vector or an N x 4 matrix
-% depending on whether the 'allquads' option is set (see below). So, for example, if 
-% 'allquads' is not set, then DATA{i}.Q(j) is the quadrant measure for the jth trial of 
-% the ith file in the DATA structure. 
+% in the second-level of the cell array DATA as either an N x 4 matrix or an N x 4 x P matrix
+% depending on whether the 'platforms' option is set, where N = number of trials and P = number of
+% platforms.
 %
 % Optional parameter/value inputs to the function are as follows:
 %
-% - 'allquads': Boolean valued flag indicating whether to simultaneously calculate the measure for all
-%               four possible quadrant locations of the platform. If set to true then Q is an N x 4
-%               matrix where the first column corresponds to the actual platform location. Note that
-%               in this case the sum of across columns Q = 100%. Default = false.
+% - 'platforms': P x 3 matrix of platform x, y and radius values to use for the measurement. If this
+%                argument is not set then the platform contained in the .wmdf file for each trial is
+%                used.
 %
 %--------------------------------------------------------------------------------
 %
@@ -61,7 +59,7 @@ if ~isa(DATA,'cell')
 end
 	
 % define the default optional arguments
-optargs = struct('allquads',false);
+optargs = struct('platforms',[]);
 
 % get the optional argument names
 optnames = fieldnames(optargs);
@@ -83,11 +81,11 @@ for pair = reshape(varargin,2,[])
 	% check whether the name matches a known option
 	if any(strmatch(inpname,optnames))
 		switch inpname
-			case 'allquads'
-				if isa(pair{2},'logical');
+			case 'platforms'
+				if isa(pair{2},'numeric') && size(pair{2},2) == 3
 					optargs.(inpname) = pair{2};
 				else
-					error('allquads must be a logical');
+					error('platforms must be a P x 3 matrix');
 				end
 		end	
 	else
@@ -99,55 +97,55 @@ end
 for ff = 1:length(DATA)
 
 	% initialize Q
-	if optargs.allquads
+	if isempty(optargs.platforms)
 		DATA{ff}.Q = zeros(DATA{ff}.ntrials,4);
 	else
-		DATA{ff}.Q = zeros(DATA{ff}.ntrials,1);
+		DATA{ff}.Q = zeros(DATA{ff}.ntrials,4,size(optargs.platforms,1));
 	end
 
 	% for each trial
 	for tt = 1:DATA{ff}.ntrials
 
 		% get the platform data
-		platform = DATA{ff}.platform(min([tt end]),1:2);
+		if isempty(optargs.platforms)
+			platforms = DATA{ff}.platform(min([tt end]),1:2);
+		else
+			platforms = optargs.platforms(:,1:2);
+		end
 
 		% get the pool data
 		pool = DATA{ff}.pool(min([tt end]),:);
+	
+		% for each platform...
+		for pp = 1:size(platforms,1)
 
-		% calculate the vectors of the edges of the correct quadrant
-		plat_rel_pool  = (platform - pool(1:2))';                                              % location of platform relative to pool centre
-		p_rotation_mat = [cos(pi/4) -sin(pi/4); sin(pi/4) cos(pi/4)];                          % 45 degree rotation matrix
-		n_rotation_mat = [cos(-pi/4) -sin(-pi/4); sin(-pi/4) cos(-pi/4)];                      % -45 degree rotation matrix
-		p_edge         = p_rotation_mat*plat_rel_pool;                                         % positive edge of quadrant
-		n_edge         = n_rotation_mat*plat_rel_pool;                                         % negative edge of quadrant
-		qedges         = [p_edge/sqrt(sum(p_edge.^2)), n_edge/sqrt(sum(n_edge.^2))]*pool(3); % quadrant edges scaled to pool size
+			% calculate the vectors of the edges of the correct quadrant
+			plat_rel_pool  = (platforms(pp,:) - pool(1:2))';                                       % location of platform relative to pool centre
+			p_rotation_mat = [cos(pi/4) -sin(pi/4); sin(pi/4) cos(pi/4)];                          % 45 degree rotation matrix
+			n_rotation_mat = [cos(-pi/4) -sin(-pi/4); sin(-pi/4) cos(-pi/4)];                      % -45 degree rotation matrix
+			p_edge         = p_rotation_mat*plat_rel_pool;                                         % positive edge of quadrant
+			n_edge         = n_rotation_mat*plat_rel_pool;                                         % negative edge of quadrant
+			qedges         = [p_edge/sqrt(sum(p_edge.^2)), n_edge/sqrt(sum(n_edge.^2))]*pool(3);   % quadrant edges scaled to pool size
 
-		% if allquads was set, calculate the positions of the equivalent quadrant edges for other quadrants
-		if optargs.allquads
+			% calculate the positions of the equivalent quadrant edges for other quadrants
 			rotation_mat = [0 -1; 1 0];            % 90 degree rotation matrix
 			qedges_q2    = rotation_mat*qedges;   % 90 degrees rotation
 			qedges_q3    = rotation_mat^2*qedges; % 180 degrees rotation
 			qedges_q4    = rotation_mat^3*qedges; % 270 degrees rotation
-		end
-	
-		% make sure the path is corrected relative to the centre of the pool
-		path = DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt);
-		path(:,2:3) = path(:,2:3) - repmat(pool(1:2),[DATA{ff}.ntimes(tt) 1]);
+		
+			% make sure the path is corrected relative to the centre of the pool
+			path = DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt);
+			path(:,2:3) = path(:,2:3) - repmat(pool(1:2),[DATA{ff}.ntimes(tt) 1]);
 
-		% calculate the quadrant measure 
-		Q = calc_Q(path, qedges);
-		if optargs.allquads		
+			% calculate the quadrant measure 
+			Q1 = calc_Q(path, qedges);
 			Q2 = calc_Q(path, qedges_q2);
 			Q3 = calc_Q(path, qedges_q3);
 			Q4 = calc_Q(path, qedges_q4);
-			Q = [Q, Q2, Q3, Q4];
-		end
+			Q  = [Q1, Q2, Q3, Q4];
 
-		% store the result in the DATA structure
-		if optargs.allquads
-			DATA{ff}.Q(tt,:) = Q;
-		else
-			DATA{ff}.Q(tt) = Q;
+			% store the result in the DATA structure
+			DATA{ff}.Q(tt,:,pp) = Q;
 		end
 	end
 end

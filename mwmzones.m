@@ -9,10 +9,8 @@ function DATA = mwmzones(DATA,varargin);
 % The obligatory input structure, DATA, is a multi-level cell array that is assumed to 
 % be in the format returned by readwmdf.m (see help readwmdf). The results are stored 
 % in a second-level variable, Z, in the cell array of DATA. Z is either an N x M matrix
-% or an N x 4 x M array, depending on whether the 'allquads' option is set (see below).
-% (N = number of trials and M = number of zones). For example, if 'allquads' was not set, 
-% and 4 zones were defined, then DATA{i}.Z(j,k) contains the zones measures for the kth zone
-% during the jth trial of the ith file in the DATA structure. 
+% or an N x M x P array, depending on whether the 'platforms' option is set (see below).
+% (N = number of trials, M = number of zones, P = number of platforms).
 %
 % Optional parameter/value inputs to the function are as follows:
 %
@@ -22,10 +20,9 @@ function DATA = mwmzones(DATA,varargin);
 %               size, of 5 for the third dimension, each one corresponding to the time spent in each zone 
 %               of radius 50, 40, etc. centred on the platform. Default = [20 15 10];
 %
-% - 'allquads': Boolean valued flag indicating whether to simultaneously calculate the measure for all
-%               four possible quadrant locations of the platform. If set to true then Z is a 4-element
-%               vector where the first element corresponds to the actual platform location. Note that
-%               in this case the sum of Z = 100%. Default = false.
+% - 'platforms': P x 3 matrix of platform x, y and radius values to use for the measurement. If this
+%                argument is not set then the platform contained in the .wmdf file for each trial is
+%                used.
 %
 %--------------------------------------------------------------------------------
 %
@@ -70,7 +67,7 @@ if ~isa(DATA,'cell')
 end
 	
 % define the default optional arguments
-optargs = struct('zones',[20 15 10],'allquads',false);
+optargs = struct('zones',[20 15 10],'platforms',true);
 
 % get the optional argument names
 optnames = fieldnames(optargs);
@@ -98,11 +95,11 @@ for pair = reshape(varargin,2,[])
                 else
 					error('zones must be a positive vector');
 				end
-			case 'allquads'
-				if isa(pair{2},'logical');
+			case 'platforms'
+				if isa(pair{2},'numeric') && size(pair{2},2) == 3
 					optargs.(inpname) = pair{2};
 				else
-					error('allquads must be a logical');
+					error('platforms must be a P x 3 matrix');
 				end
 		end	
 	else
@@ -114,44 +111,31 @@ end
 for ff = 1:length(DATA)
 
 	% initialize Z
-	if optargs.allquads
-		DATA{ff}.Z = zeros(DATA{ff}.ntrials,4,length(optargs.zones));
+	if isempty(optargs.platforms)
+		DATA{ff}.Z = zeros(DATA{ff}.ntrials,length(optargs.zones),1);
 	else
-		DATA{ff}.Z = zeros(DATA{ff}.ntrials,length(optargs.zones));
+		DATA{ff}.Z = zeros(DATA{ff}.ntrials,length(optargs.zones),size(optargs.platforms,1));
 	end
 
 	% for each trial
 	for tt = 1:DATA{ff}.ntrials
 
 		% get the platform data
-		platform = DATA{ff}.platform(min([tt end]),1:2);
+		if isempty(optargs.platforms)
+			platforms = DATA{ff}.platform(min([tt end]),1:3);
+		else
+			platforms = optargs.platforms;
+		end
 
 		% get the pool data
 		pool = DATA{ff}.pool(min([tt end]),1:2);
+	
+		% for each platform...
+		for pp = 1:size(platforms,1)
 
-		% if allquads was set, calculate the positions of the equivalent platforms in each of the other quadrants
-		if optargs.allquads
-			plat_rel_pool = (platform(1:2) - pool)';                 % location of platform relative to pool centre
-			rotation_mat  = [0 -1; 1 0];                             % 90 degree rotation matrix
-			platform_q2   = (rotation_mat*plat_rel_pool + pool')';   % platform rotated by 90 degrees
-			platform_q3   = (rotation_mat^2*plat_rel_pool + pool')'; % platform rotated by 180 degrees
-			platform_q4   = (rotation_mat^3*plat_rel_pool + pool')'; % platform rotated by 270 degrees
-		end
-
-		% calculate the zones measure 
-		Z = calc_Z(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platform, optargs.zones);
-		if optargs.allquads		
-			Z2 = calc_Z(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platform_q2, optargs.zones);
-			Z3 = calc_Z(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platform_q3, optargs.zones);
-			Z4 = calc_Z(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platform_q4, optargs.zones);
-			Z = permute([Z, Z2, Z3, Z4],[2 1]);
-		end
-
-		% store the result in the DATA structure
-		if optargs.allquads
-			DATA{ff}.Z(tt,:,:) = Z;
-		else
-			DATA{ff}.Z(tt,:) = Z;
+			% calculate the zones measure 
+			Z = calc_Z(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platforms(pp,:), optargs.zones);
+			DATA{ff}.Z(tt,:,pp) = Z;
 		end
 	end
 end
