@@ -1,0 +1,159 @@
+<h1>MWM Matlab Toolbox</h1>
+
+<h2>Intro</h2>
+
+<p>The MWM Matlab Toolbox is a series of Matlab functions for analyzing Morris Water-Maze data (see
+Morris (1984), Journal of Neuroscience Methods, 11(1):47-60 or Maei et al. (2009), Frontiers in 
+Integrative Neuroscience, 3:4). To use
+it, you must have Matlab version 7 or greater. Additionally, if you want to be able to use some of
+the more advanced analysis methods you will need to install Alexander Ihler&#39;s Kernel Density
+Estimation Toolbox (http://www.ics.uci.edu/~ihler/code/kde.html).</p>
+
+<p>This toolbox is provided freely under the GNU Lesser Public License. See the file COPYING.LESSER in
+the toolbox, or alternatively visit http://www.gnu.org/licenses/.</p>
+
+<p>The MWM Toolbox was written by Blake Richards (blake.richards@utoronto.ca).</p>
+
+<h2>Installation</h2>
+
+<p>See the file INSTALL</p>
+
+<h2>Functions</h2>
+
+<p>Functions in the MWM Toolbox are organized into four broad groups: read functions, analysis
+functions, get functions and plot functions.</p>
+
+<h3>Read functions</h3>
+
+<p>Read functions are all named read*.m These functions are used to read in data, either from user
+designed spreadsheets or from raw water-maze data files. These functions all return multi-level
+structures for storing and analyzing water-maze data. The three types of structure are:</p>
+
+<ol>
+<li><p>STUDY   - Stores information about the study, e.g. animals, dates, groups, etc.</p></li>
+<li><p>PROJECT - Stores information about water-maze &quot;projects&quot;, as defined by the Actimetrics
+water-maze software&#39;s .wmpf files (http://www.actimetrics.com/WaterMaze/). A 
+project is essentially just a collection of water-maze trials for multiple 
+animals. The PROJECT structure is what is returned by reading a .wmpf file. PROJECT
+is a cell array, with each entry corresponding to a .wmpf project file.</p></li>
+<li><p>DATA    - Stores the actual water-maze data. At its most basic this includes the animals&#39; 
+paths, the platform locations and pool size. This is also were analyzed data is
+eventually stored, e.g. measures such as time in a quadrant, number of crossings,
+entropy, etc. DATA is a cell array of cell arrays. The first level of cell arrays
+organizes data from particular episodes. For example, DATA{1} could contain
+training data and DATA{2} could contain probe data. How this is organized depends
+on the organization of the &#39;records spreadsheet&#39; (see below). The second level of 
+cell arrays iterates over each animal&#39;s data. Thus, DATA{1}{8} might be the training 
+data for animal eight for example. This ultimately corresponds to .wmdf files.</p></li>
+</ol>
+
+<h3>Analysis functions</h3>
+
+<p>Analysis functions are all named mwm*.m and they really provide the important features of the
+toolbox. Each function uses the animal&#39;s path data to calculate a measure regarding the animal&#39;s
+search path in the pool. For example, mwmquadrants provides a measurement of what percentage of
+time the animal spends in each quadrant of the pool. All of these functions take a second level DATA
+structure and return that structure with the measures embedded in it. For example, one could
+calculate the number of crossings of a platform during the second data set with the command:</p>
+
+<pre><code>DATA{2} = mwmcrossings(DATA{2});
+</code></pre>
+
+<p>The measurements are stored in each animal&#39;s cell array entry using standard names (e.g. Q for
+quadrant, X for crossings or H for entropy).</p>
+
+<h3>Get functions</h3>
+
+<p>Get functions are all named get*.m and are there in order to extract data from the DATA structure
+into something more easily analyzable (e.g. for statistics). The output of these functions are
+typically matrices of the measurements that range of all animals, trials, parameters, etc.</p>
+
+<h3>Plot functions</h3>
+
+<p>Plot functions are all named plot*.m and provide tools for visualizing water-maze data.</p>
+
+<h2>Usage Requirements</h2>
+
+<p>The MWM Toolbox is made to be fairly easy to use, but it has some particular requirements. These are
+stipulated below.</p>
+
+<h3>Animal names</h3>
+
+<p>Within the actual Actimetrics water-maze project files the user must give a name to each animal in
+the study. For these files to then be usable with this toolbox the names of the animals must follow
+the convention (CAGE_NUMBER)(ANIMAL). For example, if animal M1 from cage 5021 was included in a
+project that animal must be named 5021M1 in the Actimetrics project file.</p>
+
+<h3>Data organization</h3>
+
+<p>To use the MWM Toolbox your data must be organized in a particular way. Here are the requirements: 
+First, the actual raw data must be from Actimetrics Water-maze program, and organized in the format 
+that this program uses. This means that for each set of water-maze data there should be a .wmpf file, 
+and a folder with the same name plus the suffix &#39;Folder&#39; containing .wmdf files for each animal.
+<em>This folder must be in the same directory as the .wmdf file.</em> For example, if you have an Actimetrics 
+project file named &#39;My Project.wmpf&#39; with animals 5021M1,5021M2,5021M3, etc. then there should also be a directory 
+in the same folder titled &#39;My Project Folder&#39; with files 5021M1.wmdf, 5021M2.wmdf, 5021M3.wmdf, etc. Any departure 
+from this scheme will lead to errors in reading data.</p>
+
+<h3>Study spreadsheet</h3>
+
+<p>One of the most important requirements that must be met to use the toolbox successfully is a
+properly formatted &quot;study spreadsheet&quot;. This is a spreadsheet that lists all the animals in the
+study, their groupings (e.g. which experimental treatments they received) and the files that contain
+their data. The spreadsheet must be a .xls file (otherwise a reading error may result).</p>
+
+<p><em>The organization of this spreadsheet must follow a specific convention.</em> The columns must have
+specifc headings (not case-sensitive though) and they must be present in a specific order. Some columns are optional but others
+aren&#39;t. The columns and the order that they must be present in are as follows (optional columns are
+indicated):</p>
+
+<ul>
+<li><p>Cage #
+This is the cage number for the animal. <em>This must be numeric!</em></p></li>
+<li><p>Animal
+This is the identifier for this animal in this cage.</p></li>
+<li><p>Sex (Optional)
+This is the animal&#39;s sex.</p></li>
+<li><p>DOB (Optional)
+This is the animal&#39;s date of birth.</p></li>
+<li><p>Grouping variables (Optional)
+These can be multiple columns of any name other than &#39;File&#39;. These columns will determine the
+groups that the animal&#39;s get included in during analysis.</p></li>
+<li><p>File
+This is the name of each .wmpf file for the animals&#39; data. <em>It must include the extension.</em> There
+can be multpile &#39;File&#39; columns. Each column defines which data is grouped together in the output
+DATA structure (see the readstudy.m help).</p></li>
+<li><p>Notes (Optional)
+This contains any notes on that animal&#39;s data in the given file. Notes columns must follow File
+columns.</p></li>
+</ul>
+
+<h2>Usage Example</h2>
+
+<p>A very simple example of using the toolbox would be to use it to estimate whether there is a
+difference in the amount of time spent in the correct quadrant during probe trials. So, let&#39;s say
+that we had a records spreadsheet named &#39;wmdata.xls&#39; in the directory &#39;/home/timmy/data/&#39; with the
+following entries:</p>
+
+<pre><code>Cage #, Animal, Treatment,          File,       File
+  5021,     M1, Lidocaine, Training.wmpf, Probe.wmpf
+  5021,     M2,   Vehicle, Training.wmpf, Probe.wmpf
+  5022,     M1, Lidocaine, Training.wmpf, Probe.wmpf
+  5022,     M2,   Vehicle, Training.wmpf, Probe.wmpf
+etc.
+</code></pre>
+
+<p>We could then determine the mean time spent in the correct quadrant during the first probe trial for each group which the
+following sequence of commands:</p>
+
+<pre><code>&gt;&gt; [STUDY,DATA] = readstudy(&#39;wmdata.xls&#39;,&#39;/home/timmy/data&#39;);
+&gt;&gt; DATA{2} = mwmquadrants(DATA{2});
+&gt;&gt; Q = getquadrants(DATA{2});
+&gt;&gt; lido = getgroup(STUDY,{&#39;Lidocaine&#39;});
+&gt;&gt; vehi = getgroup(STUDY,{&#39;Vehicle&#39;});
+&gt;&gt; mean(Q(1,1,lido)), mean(Q(1,1,mean))
+</code></pre>
+
+<h2>Usage Help</h2>
+
+<p>For more help on using this toolbox see the help messages contained in each of the files.</p>
