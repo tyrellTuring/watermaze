@@ -2,7 +2,7 @@ function GI = getgroup(STUDY,gv,excl,disj)
 
 % function GI = getgroup(STUDY,GROUPVALS,[EXCLUDE, DISJUNCTION])
 %
-% Returns a vector, GI, of indices of animals in STUDY who belong to the group determined by the
+% Returns a vector, GI, of indices in of animals in STUDY who belong to the group determined by the
 % values passed in GROUPVALS. GROUPVALS must be a cell array listing the values for each of the
 % grouping variables, in the order they are stored in STUDY. For example, if a study has two
 % grouping variables, 'delay' and 'drug' with values '30 days' or '1 day' and 'CNO' or 'Control'

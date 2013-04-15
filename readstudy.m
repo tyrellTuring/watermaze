@@ -334,6 +334,8 @@ for cc = 1:length(STUDY.FILE.name)
 
 	% get the order of the animals in the projects, make sure they're in the spreadsheet, and store
 	% their index within the data
+	STUDY.data_i{cc} = zeros(1,length(STUDY.ANIMAL.id));
+	animal_counter   = 1;
 	for pp = 1:length(STUDY.PROJECT{cc})
 
 		% for each animal in the project...
@@ -342,22 +344,16 @@ for cc = 1:length(STUDY.FILE.name)
 			% check that the animal is in the spreadsheet
 			[in_spreadsheet, loc] = ismember(STUDY.PROJECT{cc}{pp}.animal{aa},STUDY.ANIMAL.id);
 
-			% store the sheet index for this animal
+			% store the sheet index for this animal and the data index
 			if in_spreadsheet
 				STUDY.PROJECT{cc}{pp}.sheet_index(aa) = loc;
+				STUDY.data_i{cc}(loc) = animal_counter; 
+				animal_counter        = animal_counter + 1;
 			else
 				error('The animal %s from project %s is not located in the spreadsheet',...
             STUDY.PROJECT{cc}{pp}.animal{aa},STUDY.PROJECT{cc}{pp}.file);
 			end
 		end
-	end
-end
-
-% store the animal's indices in the projects in an easy to access location
-for cc = 1:length(STUDY.PROJECT)
-	STUDY.data_i{cc} = [];
-	for pp = 1:length(STUDY.PROJECT{cc})
-		STUDY.data_i{cc} = [STUDY.data_i{cc},STUDY.PROJECT{cc}{pp}.sheet_index];
 	end
 end
 
