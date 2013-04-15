@@ -1,9 +1,8 @@
-MWM Toolbox
+MWM Matlab Toolbox
 =========
 
-=-----------------------
 Intro
-=-----------------------
+-----------------------
 The MWM Matlab Toolbox is a series of Matlab functions for analyzing Morris Water-Maze data. To use
 it, you must have Matlab version 7 or greater. Additionally, if you want to be able to use some of
 the more advanced analysis methods you will need to install Alexander Ihler's Kernel Density
