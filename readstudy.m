@@ -95,9 +95,6 @@ function [STUDY,DATA] = readstudy(fname,datadir,varargin)
 % -------------------------------------------------------------------------------------------------
 % Optional inputs can be provided in parameter/value format. The optional inputs are:
 %
-%   'cage_in_id'    - Boolean value, indicating whether the cage number is included in the animal's
-%                     id in the data files. Default = true.
-%
 %   'centre_origin' - Boolean value, indicating whether or not to make the centre of the pool equal to the origin in the
 %                     co-ordinate system (i.e. x = 0, y = 0). Default = true.
 %
@@ -162,7 +159,6 @@ STUDY.FILE.directory = datadir;
 
 % define the default optional arguments
 optargs = struct('centre_origin',true,...
-                 'cage_in_id',true,...
                  'pool_radius',60,...
                  'scale_data',true,...
                  'flip_data',true,...
@@ -194,12 +190,6 @@ for pair = reshape(varargin,2,[])
 					optargs.(inpname) = pair{2};
 				else
 					error('centre_origin must be a logical');
-				end
-			case 'cage_in_id'
-				if isa(pair{2},'logical')
-					optargs.(inpname) = pair{2};
-				else
-					error('cage_in_id must be a logical');
 				end
 			case 'pool_radius'
 				if isa(pair{2},'numeric');
@@ -276,19 +266,17 @@ cc = cc + 1;
 
 % create each animal's unique ID
 for aa = 1:length(STUDY.ANIMAL.cage)
-	if optargs.cage_in_id
-		if isstr(STUDY.ANIMAL.tag{aa})
-			STUDY.ANIMAL.id{aa} = sprintf('%d%s',STUDY.ANIMAL.cage(aa),STUDY.ANIMAL.tag{aa});
-		else
-			STUDY.ANIMAL.id{aa} = sprintf('%d%d',STUDY.ANIMAL.cage(aa),STUDY.ANIMAL.tag{aa});
-		end
+	if isstr(STUDY.ANIMAL.tag{aa})
+		STUDY.ANIMAL.id{aa} = sprintf('%d%s',STUDY.ANIMAL.cage(aa),STUDY.ANIMAL.tag{aa});
 	else
-		if isstr(STUDY.ANIMAL.tag{aa})
-			STUDY.ANIMAL.id{aa} = STUDY.ANIMAL.tag{aa};
-		else
-			STUDY.ANIMAL.id{aa} = sprintf('%d',STUDY.ANIMAL.tag{aa});
-		end
-	end	
+		STUDY.ANIMAL.id{aa} = sprintf('%d%d',STUDY.ANIMAL.cage(aa),STUDY.ANIMAL.tag{aa});
+	end
+end
+
+% double-check that the ids are unique
+uniq_id = unique(STUDY.ANIMAL.id);
+if length(uniq_id) ~= length(STUDY.ANIMAL.id)
+	error('There are duplicate mouse entries!');
 end
 
 % if requested, get each animal's sex
@@ -339,31 +327,28 @@ end
 for cc = 1:length(STUDY.FILE.name)
 
 	% get the unique project names
-	[unique_projects, ind, original_order] = unique(STUDY.FILE.name{cc});
+	unique_projects = unique(STUDY.FILE.name{cc});
 
 	% load the projects
 	STUDY.PROJECT{cc} = readwmpf(unique_projects,STUDY.FILE.directory);
 
-	% check that the order of the animals corresponds with the order in the spreadsheet
-	aa = 1;
-	for oo = 1:length(original_order)
+	% get the order of the animals in the projects, make sure they're in the spreadsheet, and store
+	% their index within the data
+	for pp = 1:length(STUDY.PROJECT{cc})
 
-		% reset the animal counter if necessary
-		if oo > 1 && (original_order(oo) ~= original_order(oo-1)), aa = 1; end;
+		% for each animal in the project...
+		for aa = 1:length(STUDY.PROJECT{cc}{pp}.animal)
 
-		% check that the animal is in the spreadsheet
-		if strcmp(STUDY.ANIMAL.id{oo},STUDY.PROJECT{cc}{original_order(oo)}.animal{aa}) == 1
-			aa = aa + 1;
-		else
-			error('The animal %s from project %s is not located in the spreadsheet where they should be',...
-						STUDY.PROJECT{cc}{original_order(oo)}.animal{aa},STUDY.PROJECT{cc}{original_order(oo)}.file);
-		end
+			% check that the animal is in the spreadsheet
+			[in_spreadsheet, loc] = ismember(STUDY.PROJECT{cc}{pp}.animal{aa},STUDY.ANIMAL.id);
 
-		% store the animal's order in the spreadsheet
-		if isfield(STUDY.PROJECT{cc}{original_order(oo)},'sheet_index')
-			STUDY.PROJECT{cc}{original_order(oo)}.sheet_index = [STUDY.PROJECT{cc}{original_order(oo)}.sheet_index ,oo];
-		else
-			STUDY.PROJECT{cc}{original_order(oo)}.sheet_index = oo;
+			% store the sheet index for this animal
+			if in_spreadsheet
+				STUDY.PROJECT{cc}{pp}.sheet_index(aa) = loc;
+			else
+				error('The animal %s from project %s is not located in the spreadsheet',...
+            STUDY.PROJECT{cc}{pp}.animal{aa},STUDY.PROJECT{cc}{pp}.file);
+			end
 		end
 	end
 end
