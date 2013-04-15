@@ -49,10 +49,10 @@ exclude = false(length(STUDY.ANIMAL.id),1);
 for aa = 1:length(STUDY.ANIMAL.id)
 	if ismember(STUDY.ANIMAL.id{aa},excl), exclude(aa) = true; end;
 end
-GI = find(not(exclude));
+GI = STUDY.data_i(find(not(exclude)));
 
 % go through each of the requested grouping variables and collect their data
 for gg = 1:length(gv)
 	GVAR{gg} = STUDY.ANIMAL.GROUP.vars{gv(gg)};
-	GVAL{gg} = STUDY.ANIMAL.GROUP.values{gv(gg)}(GI);
+	GVAL{gg} = STUDY.ANIMAL.GROUP.values{gv(gg)}(find(not(exclude)));
 end

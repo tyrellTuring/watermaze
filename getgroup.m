@@ -2,7 +2,7 @@ function GI = getgroup(STUDY,gv,excl,disj)
 
 % function GI = getgroup(STUDY,GROUPVALS,[EXCLUDE, DISJUNCTION])
 %
-% Returns a vector, GI, of indices in of animals in STUDY who belong to the group determined by the
+% Returns a vector, GI, of indices to the data for animals in STUDY who belong to the group determined by the
 % values passed in GROUPVALS. GROUPVALS must be a cell array listing the values for each of the
 % grouping variables, in the order they are stored in STUDY. For example, if a study has two
 % grouping variables, 'delay' and 'drug' with values '30 days' or '1 day' and 'CNO' or 'Control'
@@ -72,7 +72,7 @@ end
 
 % calculate the logical conjunction or disjunction of the groups
 if disj
-	GI = find(not(exclude) & any(ingroup,2));
+	GI = STUDY.data_i(find(not(exclude) & any(ingroup,2)));
 else
-	GI = find(not(exclude) & all(ingroup,2));
+	GI = STUDY.data_i(find(not(exclude) & all(ingroup,2)));
 end
