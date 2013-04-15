@@ -132,11 +132,11 @@ difference in the amount of time spent in the correct quadrant during probe tria
 that we had a records spreadsheet named 'wmdata.xls' in the directory '/home/timmy/data/' with the
 following entries:
 
-	*Cage #*, *Animal*, *Treatment*,        *File*,     *File*
-	5021    ,       M1,   Lidocaine, Training.wmpf, Probe.wmpf
-	5021    ,       M2,     Vehicle, Training.wmpf, Probe.wmpf
-	5022    ,       M1,   Lidocaine, Training.wmpf, Probe.wmpf
-	5022    ,       M2,     Vehicle, Training.wmpf, Probe.wmpf
+	Cage #, Animal, Treatment,          File,       File
+	  5021,     M1, Lidocaine, Training.wmpf, Probe.wmpf
+	  5021,     M2,   Vehicle, Training.wmpf, Probe.wmpf
+	  5022,     M1, Lidocaine, Training.wmpf, Probe.wmpf
+	  5022,     M2,   Vehicle, Training.wmpf, Probe.wmpf
 	etc.
 
 We could then determine the mean time spent in the correct quadrant during the first probe trial for each group which the
