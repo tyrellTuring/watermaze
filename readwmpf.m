@@ -1,6 +1,6 @@
-function PROJECT = readwmpf(fnames)
+function PROJECT = readwmpf(fnames,projdir)
 
-% function PROJECT = readwmpf(FILES)
+% function PROJECT = readwmpf(FILES,DIRECTORY)
 %
 % Reads in watermaze project information from files in the binary format produced by Actimetrics
 % software (.wmpf files).
@@ -9,6 +9,8 @@ function PROJECT = readwmpf(fnames)
 % -------------------------------------------------------------------------------------------------
 %
 %   FILES - A cell array with the names of all the project files to be read in.
+%
+%   DIRECTORY - The directory where all the project files are located.
 %
 % OUTPUT:
 % -------------------------------------------------------------------------------------------------
@@ -81,13 +83,13 @@ for ff = 1:nfiles
 	% create the file identifier
 	if iscell(fnames), filename = fnames{ff}; else, filename = fnames; end; 
   try
-		fid = fopen(filename);
+		fid = fopen(fullfile(projdir,filename));
 	catch
 		error('Could not open file %s',filename);
 	end
 
-	% store the filename
-	PROJECT{ff}.file = filename;
+	% store the full filename
+	PROJECT{ff}.file = fullfile(projdir,filename);
 
 	% determine the size of the file in bytes
 	status    = fseek(fid, 0, 'eof');
@@ -123,7 +125,7 @@ for ff = 1:nfiles
 	PROJECT{ff}.n = aa;
 
 	% determine the folder name for this project
-	[path, name, ext]  = fileparts(filename);
+	[path, name, ext]  = fileparts(PROJECT{ff}.file);
 	PROJECT{ff}.folder = fullfile(path,sprintf('%s Folder',name));
 	
 end

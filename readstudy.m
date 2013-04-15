@@ -1,6 +1,6 @@
-function [STUDY,PROJECT,DATA] = readstudy(fname,datadir,varargin)
+function [STUDY,DATA] = readstudy(fname,datadir,varargin)
 
-% function [STUDY,PROJECT,DATA] = readstudy(STUDY_RECORDS, DATA_DIRECTORY, varargin)
+% function [STUDY,DATA] = readstudy(STUDY_RECORDS, DATA_DIRECTORY, varargin)
 %
 % Reads in watermaze study information from study records in an Excel spreadsheet and loads all the
 % associated data. The function also does some limited cross-referencing between the spreadsheet and
@@ -21,13 +21,10 @@ function [STUDY,PROJECT,DATA] = readstudy(fname,datadir,varargin)
 %                     - *'DOB'
 %                     - *'GROUP VAR 1'
 %                     - *'GROUP VAR 2'
-%                     - *'GROUP VAR ...' (there can be any number of group variables, can't be 'Date')
-%                     - 'Date'              (for training or probe)
-%                     - 'File'              (.wmpf file for training or probe)
-%                     - 'Platform Location' (for training or probe)
-%                     - 'Start Sequence'    (for training or probe)
-%                     - 'Notes'             (for training or probe)
-%                     - ...             (there can be any number of entries in this pattern)
+%                     - *'GROUP VAR ...' (there can be any number of group variables, can't be 'File')
+%                     - 'File'           (.wmpf file for training or probe)
+%                     - *'Notes'         (notes on this data)
+%                     - ...              (there can be any number of entries in this pattern)
 %
 %                   Any entries that don't match these names/patterns are simply read in and stored
 %                   in the EXTRAS field (see below).
@@ -39,26 +36,34 @@ function [STUDY,PROJECT,DATA] = readstudy(fname,datadir,varargin)
 % -------------------------------------------------------------------------------------------------
 % The output of the function is three structures, STUDY, PROJECT, and DATA with the following organization:
 %
-%   PROJECT - PROJECT is a cell array with information about wach water-maze project file. See
-%             'help readwmpf' for details and sub-structure.
-%
 %   DATA{i} - DATA is a cell array of cell arrays. The DATA{i} contains the raw water-maze data for 
 %             a given collection of project files in the study. See 'help readwmdf' for details 
-%             of a single DATA entry sub-structure. See the option 'collect_data' to understand
-%             which project files will be included in each entry of DATA.
+%             of a single DATA entry sub-structure. The collections are determined by columns in the
+%             records spreadsheet, i.e. all data from project files listed in the ith column of the
+%             spreadsheet is collected into DATA{i}.
 %
 %   STUDY:
 %
 %   1st-level
 %   -------------------
 %
-%   STUDY.record    - The file name (full path) of the study records
+%   STUDY.record   - The file name (full path) of the study records
+%
+%   STUDY.data_i   - The indices for each animal within the returned DATA structure. (This is to
+%                    deal with the fact that the order of animals in the spreadsheet and STUDY
+%                    structure may not correspond to the order in the data structure.)
 %
 %   STUDY.ANIMAL   - A structure with information about each of the animals.
 %
-%   STUDY.DAYS      - A cell array with information about each day of water-maze for the animals.
+%   STUDY.DAYS     - A cell array with information about each day of water-maze for the animals.
 %
 %   STUDY.FILE     - A structure with information about the files associated to this study.
+%
+%   STUDY.PROJECT  - A cell array of cell arrays. Each cell array contains a collection of grouped
+%                    projects and each cell array within those contains information about wach 
+%                    water-maze project file. See 'help readwmpf' for details and sub-structure.
+%
+%   STUDY.EXTRAS   - A cell array with any extra entries found in the records spreadsheet. 
 %
 %   2nd-level
 %   -------------------
@@ -73,18 +78,9 @@ function [STUDY,PROJECT,DATA] = readstudy(fname,datadir,varargin)
 %   STUDY.ANIMAL.dob   - The dob of the animals. This is an optional field, see the optional input
 %                         'track_dob' below.
 %
-%   STUDY.DAYS{i}.date      - A cell array of the dates of the ith day in the study for each animal.
-%   STUDY.DAYS{i}.file      - A cell array of the .wmpf files where the ith day's data is stored.
-%   STUDY.DAYS{i}.platform  - A cell array of the platform's location on the ith day for each animal.
-%   STUDY.DAYS{i}.start     - A cell array of the start sequence on the ith day for each animal.
-%   STUDY.DAYS{i}.notes     - A cell array of any additional notes on the ith day's data for each animal.
-%   
 %   STUDY.FILE.directory   - The directory where all the data files for this study are stored (as
 %                             passed in by the user).
 %   STUDY.FILE.name        - A cell array of each unique .wmpf file's name.
-%   STUDY.FILE.collect     - A cell array of .wmpf files that are collected together for ease of
-%                             analysis (see the optional argument 'collect_data' below).
-%
 % 
 %   3rd-level
 %   -------------------
@@ -121,15 +117,6 @@ function [STUDY,PROJECT,DATA] = readstudy(fname,datadir,varargin)
 %   'track_dob'     - Boolean value, indicating whether or not to search for a 'DOB' column after
 %                     the 'Mouse' column in the spreadsheet. If set to TRUE then each animal's dob is
 %                     recorded and stored in the ANIMAL.dob variable. Default = false.
-%
-%   'collect_data'  - A cell array of cell arrays, indicating which data files should be collected
-%                     together for easier joint analysis. For example, if the following is passed:
-%
-%                       {{'Training_Group_1.wmpf', 'Training_Group_2.wmpf'},...
-%                        {'Probe_Group_1.wmpf', 'Probe_Group_2.wmpf'}}
-%
-%                     then the training files for Groups 1 and 2 will be collected into a single
-%                     data entry, and the probe files will be collected into another.
 %
 %--------------------------------------------------------------------------------
 %
@@ -180,8 +167,7 @@ optargs = struct('centre_origin',true,...
                  'scale_data',true,...
                  'flip_data',true,...
                  'track_sex',false,...
-                 'track_dob',false,...
-                 'collect_data',-1);
+                 'track_dob',false);
 
 % get the optional argument names
 optnames = fieldnames(optargs);
@@ -244,12 +230,6 @@ for pair = reshape(varargin,2,[])
 					optargs.(inpname) = pair{2};
 				else
 					error('track_dob must be a logical');
-				end
-			case 'collect_data'
-				if isa(pair{2},'cell')
-					optargs.(inpname) = pair{2};
-				else
-					error('collect_data must be a cell array');
 				end
 		end	
 	else
@@ -329,7 +309,7 @@ end
 
 %% GROUP INFO %%
 gg = 1;
-while strcmp(raw(1,min(cc,end)),'Date') ~= 1
+while strcmp(raw(1,min(cc,end)),'File') ~= 1
 	STUDY.ANIMAL.GROUP.vars{gg}   = cell2mat(raw(1,cc));
 	STUDY.ANIMAL.GROUP.values{gg} = raw(2:end,cc);
 	gg = gg + 1;
@@ -337,127 +317,89 @@ while strcmp(raw(1,min(cc,end)),'Date') ~= 1
 end
 
 %% WATER-MAZE DATA INFO %%
-dd = 1;
 ff = 1;
+file_notes = {};
 for ww = cc:size(raw,2)
 	
-	% check whether this entry is a day entry
-	if strcmp(raw(1,ww),'Date')   == 1 && strcmp(raw(1,ww+1),'File') == 1
+	% check whether this entry is a file entry
+	if strcmp(raw(1,ww),'File') == 1
 	
-		% get the day's info
-		for tt = 1:size(raw,1)-1
-			try
-				STUDY.DAYS{dd}.date{tt} = datestr(x2mdate(cell2mat(raw(tt+1,ww))),'dd mmmm yyyy');
-			catch
-				STUDY.DAYS{dd}.date{tt} = NaN;
-			end
-		end
-		STUDY.DAYS{dd}.file     = raw(2:end,ww+1);
-		STUDY.DAYS{dd}.platform = raw(2:end,ww+2);
-		STUDY.DAYS{dd}.start    = raw(2:end,ww+3);
-		STUDY.DAYS{dd}.notes    = raw(2:end,ww+4);
-
-		% if this is a new file store it in the FILE structure
-		for fnew = 1:length(STUDY.DAYS{dd}.file)
-			if isfield(STUDY.FILE,'name')
-				if ~isnan(STUDY.DAYS{dd}.file{fnew})
-					if ~ismember(STUDY.DAYS{dd}.file{fnew},STUDY.FILE.name)
-						STUDY.FILE.name{ff} = STUDY.DAYS{dd}.file{fnew};
-						ff = ff + 1;
-					end
-				end
-			else
-				STUDY.FILE.name{ff} = STUDY.DAYS{dd}.file{fnew};
-				ff = ff + 1;
-			end
-		end
-
-		% increment the counter
-		dd = dd + 1;
+		% get the file's info
+		STUDY.FILE.name{ff} = raw(2:end,ww);
+		if strcmp(raw(1,ww+1),'Notes') == 1, STUDY.FILE.notes{ff} = raw(2:end,ww+1); end;
+		ff = ff + 1;
 	end
-end
-
-%% DATA COLLECTION INFO %%
-if isa(optargs.collect_data,'cell')
-	
-	% check that each of the specified files in the collections exists in the records
-	for cc = 1:length(optargs.collect_data)
-		for ff = 1:length(optargs.collect_data{cc})
-			infiles = false;
-			for gg = 1:length(STUDY.FILE.name)
-				if strcmp(optargs.collect_data{cc}{ff},STUDY.FILE.name{gg}) == 1
-					infiles = true;
-					break;
-				end
-			end
-			if ~infiles
-				error('''collect_data'' argument contained files not contained in study records');
-			end
-		end
-	end
-				
-	% store the collection information
-	STUDY.FILE.collect = optargs.collect_data;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % READ THE PROJECT FILES
 
-% load each of the project files
-for pp = 1:length(STUDY.FILE.name)
-	project_files{pp} = fullfile(STUDY.FILE.directory,STUDY.FILE.name{pp});
-end
-PROJECT = readwmpf(project_files);
+% load each of the project file collections and make sure the animals are listed in the correct
+% order in the spreadsheet
+for cc = 1:length(STUDY.FILE.name)
 
-% make sure each of the animals listed in the project files is listed in the study
-for pp = 1:length(PROJECT)
-	for aa = 1:length(PROJECT{pp}.animal)
-		if ~ismember(PROJECT{pp}.animal{aa},STUDY.ANIMAL.id)
-			%PROJECT{pp}.animal{aa}, STUDY.ANIMAL.id
-			error(sprintf('Animal %s in project %s not in records',PROJECT{pp}.animal{aa},PROJECT{pp}.file));
+	% get the unique project names
+	[unique_projects, ind, original_order] = unique(STUDY.FILE.name{cc});
+
+	% load the projects
+	STUDY.PROJECT{cc} = readwmpf(unique_projects,STUDY.FILE.directory);
+
+	% check that the order of the animals corresponds with the order in the spreadsheet
+	aa = 1;
+	for oo = 1:length(original_order)
+
+		% reset the animal counter if necessary
+		if oo > 1 && (original_order(oo) ~= original_order(oo-1)), aa = 1; end;
+
+		% check that the animal is in the spreadsheet
+		if strcmp(STUDY.ANIMAL.id{oo},STUDY.PROJECT{cc}{original_order(oo)}.animal{aa}) == 1
+			aa = aa + 1;
+		else
+			error('The animal %s from project %s is not located in the spreadsheet where they should be',...
+						STUDY.PROJECT{cc}{original_order(oo)}.animal{aa},STUDY.PROJECT{cc}{original_order(oo)}.file);
 		end
+
+		% store the animal's order in the spreadsheet
+		if isfield(STUDY.PROJECT{cc}{original_order(oo)},'sheet_index')
+			STUDY.PROJECT{cc}{original_order(oo)}.sheet_index = [STUDY.PROJECT{cc}{original_order(oo)}.sheet_index ,oo];
+		else
+			STUDY.PROJECT{cc}{original_order(oo)}.sheet_index = oo;
+		end
+	end
+end
+
+% store the animal's indices in the projects in an easy to access location
+for cc = 1:length(STUDY.PROJECT)
+	STUDY.data_i{cc} = [];
+	for pp = 1:length(STUDY.PROJECT{cc})
+		STUDY.data_i{cc} = [STUDY.data_i{cc},STUDY.PROJECT{cc}{pp}.sheet_index];
 	end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % READ THE DATA FILES
 
-% for each project
-for pp = 1:length(PROJECT)
+% for each project collection...
+for cc = 1:length(STUDY.PROJECT)
 
-	% construct the file names for the .wmdf files
-	clear data_files;
-	for aa = 1:length(PROJECT{pp}.animal)
-		data_files{aa} = sprintf('%s.wmdf',PROJECT{pp}.animal{aa});
-	end
+	% initialize the data collection
+	DATA{cc} = {};
+	for pp = 1:length(STUDY.PROJECT{cc})
 
-	% load the data from this project
-	DATA{pp} = readwmdf(data_files,PROJECT{pp}.folder,'centre_origin',optargs.centre_origin,...
-                                                    'pool_radius',optargs.pool_radius,...
-                                                    'scale_data',optargs.scale_data,...
-                                                    'flip_data',optargs.flip_data);
-end
-
-% collect the data together as requested
-if isa(optargs.collect_data,'cell')
-	for cc = 1:length(STUDY.FILE.collect)
-		
-		% determine which elements of DATA correspond to this collection
-		incollection = [];
-		for pp = 1:length(PROJECT)
-			[pth,nam,ext] = fileparts(PROJECT{pp}.file);
-			if ismember(sprintf('%s.wmpf',nam),STUDY.FILE.collect{cc})
-				incollection = [incollection, pp];
-			end
+		% construct the file names for the .wmdf files
+		clear data_files;
+		for aa = 1:length(STUDY.PROJECT{cc}{pp}.animal)
+			data_files{aa} = sprintf('%s.wmdf',STUDY.PROJECT{cc}{pp}.animal{aa});
 		end
-		
-		% contactenate all of the members of this collection into a new DATA structure
-		newDATA{cc} = {};
-		for nn = 1:length(incollection)
-			newDATA{cc} = [newDATA{cc}, DATA{incollection(nn)}];
-		end
+
+		% load the data from this project
+		new_data = readwmdf(data_files,STUDY.PROJECT{cc}{pp}.folder,'centre_origin',optargs.centre_origin,...
+																											'pool_radius',optargs.pool_radius,...
+																											'scale_data',optargs.scale_data,...
+																											'flip_data',optargs.flip_data);
+		% add the data to the existing collection
+		DATA{cc} = [DATA{cc}, new_data];
 	end
-	DATA = newDATA;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
