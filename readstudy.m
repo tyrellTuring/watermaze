@@ -16,7 +16,7 @@ function [STUDY,DATA] = readstudy(fname,datadir,varargin)
 %                   indicated with '*'):
 %
 %                     - 'Cage #'
-%                     - 'Mouse'
+%                     - 'Animal'
 %                     - *'Sex'
 %                     - *'DOB'
 %                     - *'GROUP VAR 1'
@@ -108,11 +108,11 @@ function [STUDY,DATA] = readstudy(fname,datadir,varargin)
 %                     co-ordinate system (i.e. x = 0, y = 0). Default = true.
 %
 %   'track_sex'     - Boolean value, indicating whether or not to search for a 'Sex' column after
-%                     the 'Mouse' column in the spreadsheet. If set to TRUE then each animal's sex is
+%                     the 'Animal' column in the spreadsheet. If set to TRUE then each animal's sex is
 %                     recorded and stored in the ANIMAL.sex variable. Default = false.
 %
 %   'track_dob'     - Boolean value, indicating whether or not to search for a 'DOB' column after
-%                     the 'Mouse' column in the spreadsheet. If set to TRUE then each animal's dob is
+%                     the 'Animal' column in the spreadsheet. If set to TRUE then each animal's dob is
 %                     recorded and stored in the ANIMAL.dob variable. Default = false.
 %
 %--------------------------------------------------------------------------------
@@ -248,7 +248,7 @@ cc = 1;
 %% BASIC INFO %%
 
 % make sure the first column is the cages column
-if strcmp(raw(1,cc),'Cage #') ~= 1, error('First column must be ''Cage #'''); end;
+if strcmpi(raw(1,cc),'Cage #') ~= 1, error('First column must be ''Cage #'''); end;
 
 % store the cage numbers
 STUDY.ANIMAL.cage = cell2mat(raw(2:end,cc));
@@ -258,7 +258,7 @@ cc = cc + 1;
 STUDY.ANIMAL.n = length(STUDY.ANIMAL.cage);
 
 % make sure the second column is the mouse column
-if strcmp(raw(1,cc),'Mouse') ~= 1, error('Second column must be ''Mouse'''); end;
+if strcmpi(raw(1,cc),'Animal') ~= 1, error('Second column must be ''Animal'''); end;
 
 % store the cage numbers
 STUDY.ANIMAL.tag = raw(2:end,cc);
@@ -281,14 +281,14 @@ end
 
 % if requested, get each animal's sex
 if optargs.track_sex
-	if strcmp(raw(1,cc),'Sex') ~= 1, error('Column after ''Mouse'' must be ''Sex'''); end;
+	if strcmpi(raw(1,cc),'Sex') ~= 1, error('Column after ''Animal'' must be ''Sex'''); end;
 	STUDY.ANIMAL.sex = raw(2:end,cc);
 	cc = cc + 1;
 end
 
 % if requested, get each animal's date of birth
 if optargs.track_dob
-	if strcmp(raw(1,cc),'DOB') ~= 1, error('Column after ''Mouse'' or ''Sex'' must be ''DOB'''); end;
+	if strcmpi(raw(1,cc),'DOB') ~= 1, error('Column after ''Animal'' or ''Sex'' must be ''DOB'''); end;
 	for tt = 1:size(raw,1)-1
 		STUDY.ANIMAL.dob{tt} = datestr(x2mdate(cell2mat(raw(tt+1,cc))),'dd mmmm yyyy');
 	end
@@ -297,7 +297,7 @@ end
 
 %% GROUP INFO %%
 gg = 1;
-while strcmp(raw(1,min(cc,end)),'File') ~= 1
+while strcmpi(raw(1,min(cc,end)),'File') ~= 1
 	STUDY.ANIMAL.GROUP.vars{gg}   = cell2mat(raw(1,cc));
 	STUDY.ANIMAL.GROUP.values{gg} = raw(2:end,cc);
 	gg = gg + 1;
@@ -310,11 +310,11 @@ file_notes = {};
 for ww = cc:size(raw,2)
 	
 	% check whether this entry is a file entry
-	if strcmp(raw(1,ww),'File') == 1
+	if strcmpi(raw(1,ww),'File') == 1
 	
 		% get the file's info
 		STUDY.FILE.name{ff} = raw(2:end,ww);
-		if strcmp(raw(1,ww+1),'Notes') == 1, STUDY.FILE.notes{ff} = raw(2:end,ww+1); end;
+		if strcmpi(raw(1,min(ww+1,end)),'Notes') == 1, STUDY.FILE.notes{ff} = raw(2:end,ww+1); end;
 		ff = ff + 1;
 	end
 end
@@ -327,14 +327,18 @@ end
 for cc = 1:length(STUDY.FILE.name)
 
 	% get the unique project names
-	unique_projects = unique(STUDY.FILE.name{cc});
+	all_projects = {};
+	for pp = 1:length(STUDY.FILE.name{cc})
+		if ~isnan(STUDY.FILE.name{cc}{pp}) all_projects = [all_projects, STUDY.FILE.name{cc}{pp}]; end;
+	end
+	unique_projects = unique(all_projects);
 
 	% load the projects
 	STUDY.PROJECT{cc} = readwmpf(unique_projects,STUDY.FILE.directory);
 
 	% get the order of the animals in the projects, make sure they're in the spreadsheet, and store
 	% their index within the data
-	if cc == 1, STUDY.data_i = zeros(1,length(STUDY.ANIMAL.id)); end;
+	STUDY.data_i{cc} = zeros(1,length(STUDY.ANIMAL.id));
 	animal_counter   = 1;
 	for pp = 1:length(STUDY.PROJECT{cc})
 
@@ -347,7 +351,7 @@ for cc = 1:length(STUDY.FILE.name)
 			% store the sheet index for this animal and the data index
 			if in_spreadsheet
 				STUDY.PROJECT{cc}{pp}.sheet_index(aa) = loc;
-				if cc == 1, STUDY.data_i(loc) = animal_counter; end;
+				STUDY.data_i{cc}(loc) = animal_counter;
 				animal_counter        = animal_counter + 1;
 			else
 				error('The animal %s from project %s is not located in the spreadsheet',...
