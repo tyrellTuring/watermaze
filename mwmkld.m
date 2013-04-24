@@ -4,7 +4,8 @@ function DATA = mwmkld(DATA,platforms,varargin);
 %
 % Estimates spatial Kullback-Leibler divergence values between animals' search paths and the
 % distribution of a set of platforms. The "true" distribution (i.e. the platform distribution) is
-% estimated using a Gaussian kernel density estimation technique (see below).
+% estimated using a Gaussian kernel density estimation technique (see below). PLATFORMS can be a
+% cell array, in which case the KLD is calculated for each set of platforms in the cell array.
 % 
 % IMPORTANT: This function can only be run *after* mwmpdf.m (see help mwmpdf).
 %
@@ -67,8 +68,8 @@ if ~isa(DATA,'cell')
 end
 
 % check the platforms argument
-if ~isa(platforms,'numeric') && size(platforms,2) == 3
-	error('PLATFORMS should be a K x 3 matrix');
+if ~(isa(platforms,'numeric') && size(platforms,2) == 3) && ~isa(platforms,'cell')
+	error('PLATFORMS should be a K x 3 matrix or a cell array');
 end
 	
 % define the default optional arguments
@@ -127,6 +128,11 @@ for pair = reshape(varargin,2,[])
 	end
 end
 
+% fix weights if necessary
+if isa(platforms,'cell') && optargs.weights == ones(size(platforms,1))
+	optargs.weights = [];
+end
+
 %  for each data set in the structure
 for ff = 1:length(DATA)
 
@@ -137,67 +143,140 @@ for ff = 1:length(DATA)
 	X = XX; X(outofpool) = 0;
 	Y = YY; Y(outofpool) = 0;
 
-	% initialize the KLD structure
-	DATA{ff}.KLD.kld = zeros(size(DATA{ff}.PDF.p));
-	DATA{ff}.KLD.p   = zeros(size(DATA{ff}.PDF.p,1),size(DATA{ff}.PDF.p,2));
+	% check whether we have multiple platform sets
+	if isa(platforms,'cell')
 
-	% get the KDE
-	if optargs.bandwidth == -1
+		% for each set of platforms...
+		for pp = 1:length(platforms)
 
-		% create a KDE with an arbitrary bandwidth
-		tmpkde = kde(platforms(:,1:2)', [1; 1],optargs.weights);
+			% initialize the KLD{pp} structure
+			DATA{ff}.KLD{pp}.kld = zeros(size(DATA{ff}.PDF.p));
+			DATA{ff}.KLD{pp}.p   = zeros(size(DATA{ff}.PDF.p,1),size(DATA{ff}.PDF.p,2));
 
-		% calculate the optimal bandwidth
-		DATA{ff}.KLD.kde = ksize(tmpkde);
+			% get the KDE
+			if optargs.bandwidth == -1
+
+				% create a KDE with an arbitrary bandwidth
+				tmpkde = kde(platforms{pp}(:,1:2)', [1; 1],optargs.weights);
+
+				% calculate the optimal bandwidth
+				DATA{ff}.KLD{pp}.kde = ksize(tmpkde);
+			else
+
+				% just use the specified bandwidth
+				DATA{ff}.KLD{pp}.kde = kde(platforms{pp}(:,1:2)', [optargs.bandwidth;optargs.bandwidth],optargs.weights);
+			end
+
+			% use the KDE to estimate the PDF of the platforms across the pool
+			P = reshape(evaluate(DATA{ff}.KLD{pp}.kde,[X(:)';Y(:)']),size(DATA{ff}.PDF.p,1),size(DATA{ff}.PDF.p,1));
+
+			% limit the data to the actual area of the pool
+			P(outofpool) = nan;
+
+			% renormalize P
+			P = P./nansum(P(:)*DATA{ff}.PDF.res^2);
+
+			% store the results
+			DATA{ff}.KLD{pp}.p = P;
+
+			% for each trial, calcualte the KLD{pp}
+			DATA{ff}.KLD{pp}.kld = zeros(DATA{ff}.ntrials,1);
+			for tt = 1:DATA{ff}.ntrials
+				switch optargs.logbase
+					case 2
+						DATA{ff}.KLD{pp}.kld(tt) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log2(DATA{ff}.KLD{pp}.p./DATA{ff}.PDF.p(:,:,tt)))); 
+					case exp(1)
+						DATA{ff}.KLD{pp}.kld(tt) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log(DATA{ff}.KLD{pp}.p./DATA{ff}.PDF.p(:,:,tt))));
+					case 10
+						DATA{ff}.KLD{pp}.kld(tt) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log10(DATA{ff}.KLD{pp}.p./DATA{ff}.PDF.p(:,:,tt))));
+				end
+			end
+
+			% for each set of means, calcualte the KLD{pp}
+			DATA{ff}.KLD{pp}.mkld = zeros(length(optargs.means),1);
+			for mm = 1:length(optargs.means)
+			
+				% get the mean pdf for these trials
+				allP = zeros(size(DATA{ff}.PDF.p,1),size(DATA{ff}.PDF.p,2),length(optargs.means));
+				for tt = 1:length(optargs.means{mm})
+					allP(:,:,tt) = DATA{ff}.PDF.p(:,:,optargs.means{mm}(tt));
+				end
+				P = nanmean(allP,3);
+
+				switch optargs.logbase
+					case 2
+						DATA{ff}.KLD{pp}.mkld(mm) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log2(DATA{ff}.KLD{pp}.p./P))); 
+					case exp(1)
+						DATA{ff}.KLD{pp}.mkld(mm) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log(DATA{ff}.KLD{pp}.p./P)));
+					case 10
+						DATA{ff}.KLD{pp}.mkld(mm) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log10(DATA{ff}.KLD{pp}.p./P)));
+				end
+			end
+		end
 	else
 
-		% just use the specified bandwidth
-		DATA{ff}.KLD.kde = kde(platforms(:,1:2)', [optargs.bandwidth;optargs.bandwidth],optargs.weights);
-	end
+		% initialize the KLD structure
+		DATA{ff}.KLD.kld = zeros(size(DATA{ff}.PDF.p));
+		DATA{ff}.KLD.p   = zeros(size(DATA{ff}.PDF.p,1),size(DATA{ff}.PDF.p,2));
 
-	% use the KDE to estimate the PDF of the platforms across the pool
-	P = reshape(evaluate(DATA{ff}.KLD.kde,[X(:)';Y(:)']),size(DATA{ff}.PDF.p,1),size(DATA{ff}.PDF.p,1));
+		% get the KDE
+		if optargs.bandwidth == -1
 
-	% limit the data to the actual area of the pool
-	P(outofpool) = nan;
+			% create a KDE with an arbitrary bandwidth
+			tmpkde = kde(platforms(:,1:2)', [1; 1],optargs.weights);
 
-	% renormalize P
-	P = P./nansum(P(:)*DATA{ff}.PDF.res^2);
+			% calculate the optimal bandwidth
+			DATA{ff}.KLD.kde = ksize(tmpkde);
+		else
 
-	% store the results
-	DATA{ff}.KLD.p = P;
-
-	% for each trial, calcualte the KLD
-	DATA{ff}.KLD.kld = zeros(DATA{ff}.ntrials,1);
-	for tt = 1:DATA{ff}.ntrials
-		switch optargs.logbase
-			case 2
-				DATA{ff}.KLD.kld(tt) = nansum(nansum(DATA{ff}.KLD.p.*log2(DATA{ff}.KLD.p./DATA{ff}.PDF.p(:,:,tt)))); 
-			case exp(1)
-				DATA{ff}.KLD.kld(tt) = nansum(nansum(DATA{ff}.KLD.p.*log(DATA{ff}.KLD.p./DATA{ff}.PDF.p(:,:,tt))));
-			case 10
-				DATA{ff}.KLD.kld(tt) = nansum(nansum(DATA{ff}.KLD.p.*log10(DATA{ff}.KLD.p./DATA{ff}.PDF.p(:,:,tt))));
+			% just use the specified bandwidth
+			DATA{ff}.KLD.kde = kde(platforms(:,1:2)', [optargs.bandwidth;optargs.bandwidth],optargs.weights);
 		end
-	end
 
-	% for each set of means, calcualte the KLD
-	DATA{ff}.KLD.mkld = zeros(length(optargs.means),1);
-	for mm = 1:length(optargs.means)
-	
-		% get the mean pdf for these trials
-		allP = zeros(size(DATA{ff}.PDF.p,1),size(DATA{ff}.PDF.p,2),length(optargs.means));
-		for tt = 1:length(optargs.means{mm})
-			allP(:,:,tt) = DATA{ff}.PDF.p(:,:,optargs.means{mm}(tt));
+		% use the KDE to estimate the PDF of the platforms across the pool
+		P = reshape(evaluate(DATA{ff}.KLD.kde,[X(:)';Y(:)']),size(DATA{ff}.PDF.p,1),size(DATA{ff}.PDF.p,1));
+
+		% limit the data to the actual area of the pool
+		P(outofpool) = nan;
+
+		% renormalize P
+		P = P./nansum(P(:)*DATA{ff}.PDF.res^2);
+
+		% store the results
+		DATA{ff}.KLD.p = P;
+
+		% for each trial, calcualte the KLD
+		DATA{ff}.KLD.kld = zeros(DATA{ff}.ntrials,1);
+		for tt = 1:DATA{ff}.ntrials
+			switch optargs.logbase
+				case 2
+					DATA{ff}.KLD.kld(tt) = nansum(nansum(DATA{ff}.KLD.p.*log2(DATA{ff}.KLD.p./DATA{ff}.PDF.p(:,:,tt)))); 
+				case exp(1)
+					DATA{ff}.KLD.kld(tt) = nansum(nansum(DATA{ff}.KLD.p.*log(DATA{ff}.KLD.p./DATA{ff}.PDF.p(:,:,tt))));
+				case 10
+					DATA{ff}.KLD.kld(tt) = nansum(nansum(DATA{ff}.KLD.p.*log10(DATA{ff}.KLD.p./DATA{ff}.PDF.p(:,:,tt))));
+			end
 		end
-		P = nanmean(allP,3);
 
-		switch optargs.logbase
-			case 2
-				DATA{ff}.KLD.mkld(mm) = nansum(nansum(DATA{ff}.KLD.p.*log2(DATA{ff}.KLD.p./P))); 
-			case exp(1)
-				DATA{ff}.KLD.mkld(mm) = nansum(nansum(DATA{ff}.KLD.p.*log(DATA{ff}.KLD.p./P)));
-			case 10
-				DATA{ff}.KLD.mkld(mm) = nansum(nansum(DATA{ff}.KLD.p.*log10(DATA{ff}.KLD.p./P)));
+		% for each set of means, calcualte the KLD
+		DATA{ff}.KLD.mkld = zeros(length(optargs.means),1);
+		for mm = 1:length(optargs.means)
+		
+			% get the mean pdf for these trials
+			allP = zeros(size(DATA{ff}.PDF.p,1),size(DATA{ff}.PDF.p,2),length(optargs.means));
+			for tt = 1:length(optargs.means{mm})
+				allP(:,:,tt) = DATA{ff}.PDF.p(:,:,optargs.means{mm}(tt));
+			end
+			P = nanmean(allP,3);
+
+			switch optargs.logbase
+				case 2
+					DATA{ff}.KLD.mkld(mm) = nansum(nansum(DATA{ff}.KLD.p.*log2(DATA{ff}.KLD.p./P))); 
+				case exp(1)
+					DATA{ff}.KLD.mkld(mm) = nansum(nansum(DATA{ff}.KLD.p.*log(DATA{ff}.KLD.p./P)));
+				case 10
+					DATA{ff}.KLD.mkld(mm) = nansum(nansum(DATA{ff}.KLD.p.*log10(DATA{ff}.KLD.p./P)));
+			end
 		end
 	end
 end

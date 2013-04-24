@@ -1,9 +1,10 @@
-function [K MK] = getkld(DATA)
+function [K MK] = getkld(DATA,pindex)
 
-% function [K MK] = getkld(DATA)
+% function [K MK] = getkld(DATA,[PINDEX])
 %
 % Returns the Kullback-Leibler divergences from a data set. Both mwmpdf and mwmkld must have been
-% run first. K is the KLDs for specific trials, MK is the KLDs for the mean trial KLDs.
+% run first. K is the KLDs for specific trials, MK is the KLDs for the mean trial KLDs. The argument
+% PINDEX can be used to select a particular platform set KLD, if multiple ones were calculated.
 %
 % MANDATORY INPUTS:
 % -------------------------------------------------------------------------------------------------
@@ -48,32 +49,70 @@ function [K MK] = getkld(DATA)
 % see <http://www.gnu.org/licenses/>.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% determine the number of trials
-ntrial = zeros(length(DATA),1);
-for aa = 1:length(DATA)
-	ntrial(aa) = DATA{aa}.ntrials;
-end 
+% check arguments
+if nargin < 2, pindex = 1; end;
 
-% determine the number of means
-nmeans = zeros(length(DATA),1);
-for aa = 1:length(DATA)
-	nmeans(aa) = length(DATA{aa}.KLD.mkld);
-end 
+% check whether multiple platform sets weere calculated for
+if isa(DATA{1}.KLD,'cell')
+	
+	% determine the number of trials
+	ntrial = zeros(length(DATA),1);
+	for aa = 1:length(DATA)
+		ntrial(aa) = DATA{aa}.ntrials;
+	end 
 
-% initialize 
-K  = zeros(max(ntrial),length(DATA));
-MK = zeros(max(nmeans),length(DATA));
+	% determine the number of means
+	nmeans = zeros(length(DATA),1);
+	for aa = 1:length(DATA)
+		nmeans(aa) = length(DATA{aa}.KLD{pindex}.mkld);
+	end 
 
-% get the KLDs from each animal's trials
-for aa = 1:length(DATA)
-	for tt = 1:DATA{aa}.ntrials
-		K(tt,aa) = DATA{aa}.KLD.kld(tt);
+	% initialize 
+	K  = zeros(max(ntrial),length(DATA));
+	MK = zeros(max(nmeans),length(DATA));
+
+	% get the KLD{pindex}s from each animal's trials
+	for aa = 1:length(DATA)
+		for tt = 1:DATA{aa}.ntrials
+			K(tt,aa) = DATA{aa}.KLD{pindex}.kld(tt);
+		end
 	end
-end
 
-% get the KLDs from each animal's means
-for aa = 1:length(DATA)
-	for mm = 1:nmeans(aa)
-		MK(mm,aa) = DATA{aa}.KLD.mkld(mm);
+	% get the KLD{pindex}s from each animal's means
+	for aa = 1:length(DATA)
+		for mm = 1:nmeans(aa)
+			MK(mm,aa) = DATA{aa}.KLD{pindex}.mkld(mm);
+		end
+	end
+else
+
+	% determine the number of trials
+	ntrial = zeros(length(DATA),1);
+	for aa = 1:length(DATA)
+		ntrial(aa) = DATA{aa}.ntrials;
+	end 
+
+	% determine the number of means
+	nmeans = zeros(length(DATA),1);
+	for aa = 1:length(DATA)
+		nmeans(aa) = length(DATA{aa}.KLD.mkld);
+	end 
+
+	% initialize 
+	K  = zeros(max(ntrial),length(DATA));
+	MK = zeros(max(nmeans),length(DATA));
+
+	% get the KLDs from each animal's trials
+	for aa = 1:length(DATA)
+		for tt = 1:DATA{aa}.ntrials
+			K(tt,aa) = DATA{aa}.KLD.kld(tt);
+		end
+	end
+
+	% get the KLDs from each animal's means
+	for aa = 1:length(DATA)
+		for mm = 1:nmeans(aa)
+			MK(mm,aa) = DATA{aa}.KLD.mkld(mm);
+		end
 	end
 end

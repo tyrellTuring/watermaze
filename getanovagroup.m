@@ -1,11 +1,17 @@
 function [GI,GVAR,GVAL] = getanovagroup(STUDY,gv,dnum,excl)
 
-% function [GI,GVAR,GVAL] = getanovagroup(STUDY,GROUPVARS,[DATANUM,EXCLUDE])
+% function [GI,GVAR,GVAL] = getanovagroup(STUDY,GROUPVALS,[DATANUM,EXCLUDE])
 %
 % Returns a vector of animal indices, GI, and cell arrays of group variables, GVAR, and values, 
 % GVAL, that can be used in the function anovan (which is part of the Matlab Stats package). 
-% GI can be used to access data for non-excluded animals from other vectors. The variable 
-% GROUPVARS should be a numeric index listing which grouping variables to include.
+% GI can be used to access data for non-excluded animals from other vectors. GROUPVALS must be a
+% cell array of cell arrays containing the group sets that are desired for the anova analyis 
+% (for all grouping variables, in the order they are stored in STUDY). For example, if a study has two
+% grouping variables, 'delay' and 'drug' with values '60 days', '30 days' or '1 day' and 'CNO' or 'Control'
+% respectively, then GROUPVALS = {{'30 days','1 day'},{'CNO','Control'} would return variables to do
+% a 2-way anova comparing the effects of '30 days' vs '1 day' and 'CNO' vs 'Control'.
+%
+% Note: if an array in GROUPVALS is NaN, then all values of that grouping variable are selected.
 %
 % DATANUM is an optional integer that can be provided to obtain indices for the animals relative to
 % different data collections (see help readstudy). By default datanum = 1.
@@ -42,26 +48,49 @@ function [GI,GVAR,GVAL] = getanovagroup(STUDY,gv,dnum,excl)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % parse the args
-if ~isa(gv,'numeric')
-	error('GROUPVARS should be a numeric vector');
+if ~isa(gv,'cell')
+	error('GROUPVALS should be a cell array');
 end
 if nargin < 3, dnum = 1;  end;
 if nargin < 4, excl = {}; end;
 
-% get a logical vector of the exclusions and the animal indices
-exclude = false(length(STUDY.ANIMAL.id),1);
-for aa = 1:length(STUDY.ANIMAL.id)
-	if ismember(STUDY.ANIMAL.id{aa},excl), exclude(aa) = true; end;
+% get all the unique groups in the study
+UG = getuniquegroups(STUDY);
+
+% for each unique group get the indices of the animals and add it to our vector
+GI = [];
+GS = [];
+for uu = 1:size(UG,1)
+	G = {};
+	usegroup = true;
+	for gg = 1:size(UG,2)
+		if ismember(UG{uu,gg},gv{gg})
+			G = [G, UG{uu,gg}];
+		elseif ~isa(gv{gg},'cell') && isnan(gv{gg})
+			G = [G, UG{uu,gg}];
+		else
+			usegroup = false;
+			break;
+		end
+	end
+	if usegroup
+		[gdi, gsi] = getgroup(STUDY,G,dnum,excl);
+		GI = [GI, gdi];
+		GS = [GS, gsi];
+	end
 end
-GI = STUDY.data_i{dnum}(find(not(exclude)));
 
-% remove any zero entries
-hasdata = GI ~= 0;
-GI = GI(hasdata);
-
-% go through each of the requested grouping variables and collect their data
+% get the group variables and values for these animals
+GVAR = {};
+gcounter = 1;
 for gg = 1:length(gv)
-	GVAR{gg} = STUDY.ANIMAL.GROUP.vars{gv(gg)};
-	GVAL{gg} = STUDY.ANIMAL.GROUP.values{gv(gg)}(find(not(exclude)));
-	GVAL{gg} = GVAL{gg}(hasdata);
+	if length(gv{gg}) > 1 || (~isa(gv{gg},'cell') && isnan(gv{gg}))
+		GVAR = [GVAR,STUDY.ANIMAL.GROUP.vars{gg}];
+		values = {};
+		for vv = 1:length(GI)
+			values = [values;STUDY.ANIMAL.GROUP.values{gg}{GS(vv)}];
+		end
+		GVAL{gcounter} = values;
+		gcounter = gcounter + 1;
+	end
 end

@@ -1,13 +1,14 @@
-function GI = getgroup(STUDY,gv,dnum,excl,disj)
+function [GD, GS] = getgroup(STUDY,gv,dnum,excl,disj)
 
-% function GI = getgroup(STUDY,GROUPVALS,[DATANUM,EXCLUDE, DISJUNCTION])
+% function [GD, GS] = getgroup(STUDY,GROUPVALS,[DATANUM,EXCLUDE,DISJUNCTION])
 %
-% Returns a vector, GI, of indices to the data for animals in STUDY who belong to the group determined by the
-% values passed in GROUPVALS. GROUPVALS must be a cell array listing the values for each of the
-% grouping variables, in the order they are stored in STUDY. For example, if a study has two
-% grouping variables, 'delay' and 'drug' with values '30 days' or '1 day' and 'CNO' or 'Control'
-% respectively, then GROUPVALS = {'30 days','CNO'} would return the indices of all animals with
-% 'delay = 30 days' *and* 'drug = CNO'.
+% Returns two vectors, GS and GD, of indices to the data for animals in STUDY who belong to the 
+% group determined by the values passed in GROUPVALS. GROUPVALS must be a cell array listing the 
+% values for each of the grouping variables, in the order they are stored in STUDY. For example, 
+% if a study has two grouping variables, 'delay' and 'drug' with values '30 days' or '1 day' and 
+% 'CNO' or 'Control' respectively, then GROUPVALS = {'30 days','CNO'} would return the indices of all 
+% animals with 'delay = 30 days' *and* 'drug = CNO'. GD are the indices for the DATA structure, GS
+% are the indices for the STUDY structure.
 %
 % DATANUM is an optional integer that can be provided to obtain indices for the animals relative to
 % different data collections (see help readstudy). By default datanum = 1.
@@ -76,10 +77,13 @@ end
 
 % calculate the logical conjunction or disjunction of the groups
 if disj
-	GI = STUDY.data_i{dnum}(find(not(exclude) & any(ingroup,2)));
+	GS = (find(not(exclude) & any(ingroup,2)))';
+	GD = STUDY.data_i{dnum}(GS);
 else
-	GI = STUDY.data_i{dnum}(find(not(exclude) & all(ingroup,2)));
+	GS = (find(not(exclude) & all(ingroup,2)))';
+	GD = STUDY.data_i{dnum}(GS);
 end
 
 % remove any zeros
-GI = GI(GI ~= 0);
+GS = GS(GS ~= 0);
+GD = GD(GD ~= 0);
