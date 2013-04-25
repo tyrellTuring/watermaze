@@ -28,6 +28,8 @@ function [sh P] = plotpdf(DATA,trials,animals,varargin)
 %   'show_kldpdf' - Boolean value, determines whether to show the pdf used for the KLD calculation
 %                   rather than animal's paths. Default = false.
 %
+%   'kld_num'   - To be used with 'show_kldpdf', determines which number of kld pdf to plot.
+%
 %   'show_axis' - Boolean value, determines whether the spatial axis is shown. Default = false.
 %
 %   'measure'   - String, defining the measure to use for combining multiple PDFs. Options are:
@@ -82,6 +84,7 @@ function [sh P] = plotpdf(DATA,trials,animals,varargin)
 % define the default optional arguments
 optargs = struct('show_axis',false,...
                  'show_kldpdf',false,...
+                 'kld_num',1,...
                  'measure','mean',...
                  'platforms',[],...
                  'plat_opacity',0.3,...
@@ -121,6 +124,12 @@ for pair = reshape(varargin,2,[])
 					optargs.(inpname) = pair{2};
 				else
 					error('show_kldpdf must be a logical');
+				end
+			case 'kld_num'
+				if isa(pair{2},'numeric')
+					optargs.(inpname) = pair{2};
+				else
+					error('kld_num must be an integer');
 				end
 			case 'measure'
 				if isa(pair{2},'char') && ismember(pair{2},{'mean','max','min','var'})
@@ -179,7 +188,11 @@ Y = DATA{1}.PDF.y;
 
 % see whether we're using the PDF from the KLD
 if optargs.show_kldpdf
-	P = DATA{1}.KLD.p;
+	if isa(DATA{1}.KLD,'cell')
+		P = DATA{1}.KLD{optargs.kld_num}.p;
+	else	
+		P = DATA{1}.KLD.p;
+	end
 else
 	% get the data from all the trials and animals
 	allP = zeros(size(X,1),size(X,2),length(trials),length(animals));
