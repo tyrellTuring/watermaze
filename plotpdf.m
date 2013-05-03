@@ -28,11 +28,7 @@ function [sh P] = plotpdf(DATA,trials,animals,varargin)
 %   'show_kldpdf' - Boolean value, determines whether to show the pdf used for the KLD calculation
 %                   rather than animal's paths. Default = false.
 %
-<<<<<<< HEAD
-%   'kldnum'    - Integer indicating which KLD struct to use when plotting the KLD pdf. Default = 1.
-=======
 %   'kld_num'   - To be used with 'show_kldpdf', determines which number of kld pdf to plot.
->>>>>>> a1d51b7f65ffc9ad8ce9c0194a8be3283308ed13
 %
 %   'show_axis' - Boolean value, determines whether the spatial axis is shown. Default = false.
 %
@@ -88,11 +84,7 @@ function [sh P] = plotpdf(DATA,trials,animals,varargin)
 % define the default optional arguments
 optargs = struct('show_axis',false,...
                  'show_kldpdf',false,...
-<<<<<<< HEAD
-                 'kldnum',1,...
-=======
                  'kld_num',1,...
->>>>>>> a1d51b7f65ffc9ad8ce9c0194a8be3283308ed13
                  'measure','mean',...
                  'platforms',[],...
                  'plat_opacity',0.3,...
@@ -133,19 +125,11 @@ for pair = reshape(varargin,2,[])
 				else
 					error('show_kldpdf must be a logical');
 				end
-<<<<<<< HEAD
-			case 'kldnum'
-				if isa(pair{2},'numeric')
-					optargs.(inpname) = pair{2};
-				else
-					error('kldnum must be an integer');
-=======
 			case 'kld_num'
 				if isa(pair{2},'numeric')
 					optargs.(inpname) = pair{2};
 				else
 					error('kld_num must be an integer');
->>>>>>> a1d51b7f65ffc9ad8ce9c0194a8be3283308ed13
 				end
 			case 'measure'
 				if isa(pair{2},'char') && ismember(pair{2},{'mean','max','min','var'})
@@ -205,13 +189,8 @@ Y = DATA{1}.PDF.y;
 % see whether we're using the PDF from the KLD
 if optargs.show_kldpdf
 	if isa(DATA{1}.KLD,'cell')
-<<<<<<< HEAD
-		P = DATA{1}.KLD{optargs.kldnum}.p;
-	else
-=======
 		P = DATA{1}.KLD{optargs.kld_num}.p;
 	else	
->>>>>>> a1d51b7f65ffc9ad8ce9c0194a8be3283308ed13
 		P = DATA{1}.KLD.p;
 	end
 else
