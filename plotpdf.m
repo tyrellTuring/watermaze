@@ -28,6 +28,8 @@ function [sh P] = plotpdf(DATA,trials,animals,varargin)
 %   'show_kldpdf' - Boolean value, determines whether to show the pdf used for the KLD calculation
 %                   rather than animal's paths. Default = false.
 %
+%   'kldnum'    - Integer indicating which KLD struct to use when plotting the KLD pdf. Default = 1.
+%
 %   'show_axis' - Boolean value, determines whether the spatial axis is shown. Default = false.
 %
 %   'measure'   - String, defining the measure to use for combining multiple PDFs. Options are:
@@ -82,6 +84,7 @@ function [sh P] = plotpdf(DATA,trials,animals,varargin)
 % define the default optional arguments
 optargs = struct('show_axis',false,...
                  'show_kldpdf',false,...
+                 'kldnum',1,...
                  'measure','mean',...
                  'platforms',[],...
                  'plat_opacity',0.3,...
@@ -121,6 +124,12 @@ for pair = reshape(varargin,2,[])
 					optargs.(inpname) = pair{2};
 				else
 					error('show_kldpdf must be a logical');
+				end
+			case 'kldnum'
+				if isa(pair{2},'numeric')
+					optargs.(inpname) = pair{2};
+				else
+					error('kldnum must be an integer');
 				end
 			case 'measure'
 				if isa(pair{2},'char') && ismember(pair{2},{'mean','max','min','var'})
@@ -179,7 +188,11 @@ Y = DATA{1}.PDF.y;
 
 % see whether we're using the PDF from the KLD
 if optargs.show_kldpdf
-	P = DATA{1}.KLD.p;
+	if isa(DATA{1}.KLD,'cell')
+		P = DATA{1}.KLD{optargs.kldnum}.p;
+	else
+		P = DATA{1}.KLD.p;
+	end
 else
 	% get the data from all the trials and animals
 	allP = zeros(size(X,1),size(X,2),length(trials),length(animals));
@@ -221,6 +234,7 @@ end
 figure();
 set(gcf,'InvertHardcopy','off');
 set(gcf,'Position',[400 100 500 500],'PaperPosition',[2 2 6 6]);
+set(gcf,'Color',[1 1 1]);
 hold on;
 
 % plot the PDF as a surface
@@ -263,7 +277,17 @@ if ~isempty(optargs.platforms)
 		circ(:,2) = optargs.platforms(pp,2) + sin([0:pi/500:2*pi])*optargs.platforms(pp,3);
 		circ(:,3) = max(P(:))*1.1;
 		ch(pp) = fill3(circ(:,1),circ(:,2),circ(:,3),[1 1 1],'linewidth',2);
-		if ~isempty(optargs.plat_colour), set(ch(pp),'FaceColor',optargs.plat_colour(pp,:)); end;
+		if ~isempty(optargs.plat_colour)
+			set(ch(pp),'FaceColor',optargs.plat_colour(pp,:));
+		else
+			set(ch(pp),'FaceColor','none');
+		end
 		set(ch(pp),'FaceAlpha',optargs.plat_opacity,'EdgeAlpha',optargs.plat_opacity);
 	end
+end
+
+% draw the crosshairs
+if optargs.crosshair
+	plot3([-DATA{1}.pool(3) DATA{1}.pool(3)],[0 0],[max(P(:))*1.1 max(P(:))*1.1],'w--','LineWidth',2);
+	plot3([0 0],[-DATA{1}.pool(3) DATA{1}.pool(3)],[max(P(:))*1.1 max(P(:))*1.1],'w--','LineWidth',2);
 end

@@ -1,14 +1,14 @@
 function DATA = mwmzonelat(DATA,varargin)
 
-% function DATA = mwmzonelat(DATA,varargin); 
+% function DATA{} = mwmzonelat(DATA{},varargin); 
 %
 % Calculates the latency to a given set of zones in the water maze.
 %
 % The obligatory input structure, DATA, is a multi-level cell array that is assumed to 
 % be in the format returned by readwmdf.m (see help readwmdf). The results are stored 
-% in a second-level variable, Z, in the cell array of DATA. Z is either an N x M matrix
-% or an N x M x P array, depending on whether the 'allquads' option is set (see below).
-% (N = number of trials, M = number of zones, P = number of platforms). 
+% in a second-level variable, ZL, in the cell array of DATA. ZL is either an N x M matrix
+% or an N x M x P array, depending on whether the 'platforms' option is set (see below).
+% (N = number of trials, M = number of zones, P = number of platforms).
 %
 % Optional parameter/value inputs to the function are as follows:
 %
@@ -104,9 +104,9 @@ for ff = 1:length(DATA)
 
 	% initialize Z
 	if isempty(optargs.platforms)
-		DATA{ff}.L = zeros(DATA{ff}.ntrials,length(optargs.zones),1);
+		DATA{ff}.ZL = zeros(DATA{ff}.ntrials,length(optargs.zones),1);
 	else
-		DATA{ff}.L = zeros(DATA{ff}.ntrials,length(optargs.zones),size(optargs.platforms,1));
+		DATA{ff}.ZL = zeros(DATA{ff}.ntrials,length(optargs.zones),size(optargs.platforms,1));
 	end
 
 	% for each trial
@@ -129,7 +129,7 @@ for ff = 1:length(DATA)
 			Z = calc_L(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platforms(pp,:), optargs.zones);
 
 			% store the result in the DATA structure
-			DATA{ff}.L(tt,:,pp) = Z;
+			DATA{ff}.ZL(tt,:,pp) = Z;
 		end
 	end
 end

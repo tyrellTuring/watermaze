@@ -1,11 +1,11 @@
 function DATA = mwmcrossings(DATA,varargin); 
 
-% function DATA = mwmcrossings(DATA,varargin); 
+% function DATA{} = mwmcrossings(DATA{},varargin); 
 %
 % Calculates the number of crossings measure for a Morris-Water-Maze dataset, X, as outlined in
-% Maei et al. (2009). The obligatory input structure, DATA, is a multi-level cell array that
+% Maei et al. (2009). The obligatory input structure, DATA{}, is a multi-level cell array that
 % is assumed to be in the format returned by readwmdf.m (see help readwmdf). The results are 
-% stored in the second-level of DATA as either an N x 1 vector or an N x P matrix (depending
+% stored in the second-level of DATA as X: either an N x 1 vector or an N x P matrix (depending
 % on whether the 'platforms' option is set, see below), where N = number of trials and P = 
 % number of platforms.
 %

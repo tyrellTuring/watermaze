@@ -1,14 +1,17 @@
 function DATA = mwmquadrant(DATA,varargin); 
 
-% function DATA = mwmquadrant(DATA,varargin); 
+% function DATA{} = mwmquadrant(DATA{},varargin); 
 %
 % Calculates the quadrants measure for a Morris-Water-Maze dataset, Q, as outlined in
 % Maei et al. (2009). This is simply the percent time spent in the "correct" quadrant.
 % The obligatory input structure, DATA, is a multi-level cell array that is assumed to 
 % be in the format returned by readwmdf.m (see help readwmdf). The results are stored 
-% in the second-level of the cell array DATA as either an N x 4 matrix or an N x 4 x P matrix
+% in the second-level of the cell array DATA as Q: either an N x 4 matrix or an N x 4 x P matrix
 % depending on whether the 'platforms' option is set, where N = number of trials and P = number of
 % platforms.
+%
+% Note: The length 4 dimension of Q ranges over quadrants. The first quadrant is the one centred on
+% the given platform, and the others follow in clockwise order.
 %
 % Optional parameter/value inputs to the function are as follows:
 %

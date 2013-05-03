@@ -1,13 +1,13 @@
 function DATA = mwmentropy(DATA,varargin); 
 
-% function DATA = mwmentropy(DATA,varargin); 
+% function DATA{} = mwmentropy(DATA{},varargin); 
 %
 % Calculates the entropy measure for a Morris-Water-Maze dataset, H. The entropy
 % can either be estimated using a parametric method as outlined in Maei et al. (2009) 
 % or using a kernel density estimate (in which case mwmpdf must be run first). The obligatory 
 % input structure, DATA, is a multi-level cell array that is assumed to be in the format 
 % returned by readwmdf.m (see help readwmdf). The results are stored in the second-level of 
-% DATA as either an N x 1 vector or an N x P matrix (depending on whether the 'platforms' option 
+% DATA as H: either an N x 1 vector or an N x P matrix (depending on whether the 'platforms' option 
 % is set, see below), where N = number of trials and P = number of platforms. 
 %
 % Optional parameter/value inputs to the function are as follows:

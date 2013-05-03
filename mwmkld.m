@@ -1,6 +1,6 @@
 function DATA = mwmkld(DATA,platforms,varargin); 
 
-% function DATA = mwmkld(DATA,PLATFORMS,varargin); 
+% function DATA{} = mwmkld(DATA{},PLATFORMS,varargin); 
 %
 % Estimates spatial Kullback-Leibler divergence values between animals' search paths and the
 % distribution of a set of platforms. The "true" distribution (i.e. the platform distribution) is
@@ -15,7 +15,9 @@ function DATA = mwmkld(DATA,platforms,varargin);
 % likelihood cross-validation search method. See 'help ksize' for more information.
 %
 % Note that the KDEs for the platforms as well as their estimated PDF are also stored, along with
-% the actual divergence value, in the sub-structure KDE.
+% the actual divergence value, in the sub-structure KDE. All of the results are stored in the
+% structure KLD. If multiple platform sets are given then KLD is a cell array, one structure for
+% each set.
 %
 % Optional parameter/value inputs to the function are as follows:
 %
@@ -30,6 +32,9 @@ function DATA = mwmkld(DATA,platforms,varargin);
 %              multiple trials' pdfs. For example, {[1 2],[4 5]} would lead to KLD being calculated
 %              for pdfs averaged over the first and second, then the fourth and fifth trials. These
 %              KLD values are stored in the sub-vector mkld in the order they were requested. 
+%
+% - 'pdf': A function handle to the pdf to be used for evaluating the KLD. If this option is passed
+%          in PLATFORMS is ignored.
 %
 %--------------------------------------------------------------------------------
 %

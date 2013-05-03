@@ -1,6 +1,6 @@
 function DATA = mwmpdf(DATA,varargin); 
 
-% function DATA = mwmpdf(DATA,varargin); 
+% function DATA{} = mwmpdf(DATA{},varargin); 
 %
 % Estimates spatial probability density functions from animals' search paths, using gaussian kernel 
 % density estimates based on the moment-to-moment position of the animal. The obligatory 

@@ -1,6 +1,6 @@
 function DATA = mwmzones(DATA,varargin); 
 
-% function DATA = mwmzones(DATA,varargin); 
+% function DATA{} = mwmzones(DATA{},varargin); 
 %
 % Calculates the zones measure for a Morris-Water-Maze dataset, Z, as outlined in
 % Maei et al. (2009). This is simply the percent time spent in the "correct" zones, which
@@ -67,7 +67,7 @@ if ~isa(DATA,'cell')
 end
 	
 % define the default optional arguments
-optargs = struct('zones',[20 15 10],'platforms',true);
+optargs = struct('zones',[20 15 10],'platforms',[]);
 
 % get the optional argument names
 optnames = fieldnames(optargs);
