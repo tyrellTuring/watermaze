@@ -33,9 +33,6 @@ function DATA = mwmkld(DATA,platforms,varargin);
 %              for pdfs averaged over the first and second, then the fourth and fifth trials. These
 %              KLD values are stored in the sub-vector mkld in the order they were requested. 
 %
-% - 'pdf': A function handle to the pdf to be used for evaluating the KLD. If this option is passed
-%          in PLATFORMS is ignored.
-%
 %--------------------------------------------------------------------------------
 %
 % 02/2013, Frankland Lab (www.franklandlab.com)
@@ -189,11 +186,11 @@ for ff = 1:length(DATA)
 			for tt = 1:DATA{ff}.ntrials
 				switch optargs.logbase
 					case 2
-						DATA{ff}.KLD{pp}.kld(tt) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log2(DATA{ff}.KLD{pp}.p./DATA{ff}.PDF.p(:,:,tt)))); 
+						DATA{ff}.KLD{pp}.kld(tt) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log2(DATA{ff}.KLD{pp}.p./(DATA{ff}.PDF.p(:,:,tt)+exp(-100))))); 
 					case exp(1)
-						DATA{ff}.KLD{pp}.kld(tt) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log(DATA{ff}.KLD{pp}.p./DATA{ff}.PDF.p(:,:,tt))));
+						DATA{ff}.KLD{pp}.kld(tt) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log(DATA{ff}.KLD{pp}.p./(DATA{ff}.PDF.p(:,:,tt)+exp(-100)))));
 					case 10
-						DATA{ff}.KLD{pp}.kld(tt) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log10(DATA{ff}.KLD{pp}.p./DATA{ff}.PDF.p(:,:,tt))));
+						DATA{ff}.KLD{pp}.kld(tt) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log10(DATA{ff}.KLD{pp}.p./(DATA{ff}.PDF.p(:,:,tt)+exp(-100)))));
 				end
 			end
 
@@ -210,11 +207,12 @@ for ff = 1:length(DATA)
 
 				switch optargs.logbase
 					case 2
-						DATA{ff}.KLD{pp}.mkld(mm) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log2(DATA{ff}.KLD{pp}.p./P))); 
+						DATA{ff}.KLD{pp}.mkld(mm) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log2(DATA{ff}.KLD{pp}.p./(P+exp(-100))))); 
 					case exp(1)
-						DATA{ff}.KLD{pp}.mkld(mm) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log(DATA{ff}.KLD{pp}.p./P)));
+						DATA{ff}.KLD{pp}.mkld(mm) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log(DATA{ff}.KLD{pp}.p./(P+exp(-100)))));
 					case 10
-						DATA{ff}.KLD{pp}.mkld(mm) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log10(DATA{ff}.KLD{pp}.p./P)));
+						DATA{ff}.KLD{pp}.mkld(mm) =
+nansum(nansum(DATA{ff}.KLD{pp}.p.*log10(DATA{ff}.KLD{pp}.p./(P)));
 				end
 			end
 		end
@@ -255,11 +253,11 @@ for ff = 1:length(DATA)
 		for tt = 1:DATA{ff}.ntrials
 			switch optargs.logbase
 				case 2
-					DATA{ff}.KLD.kld(tt) = nansum(nansum(DATA{ff}.KLD.p.*log2(DATA{ff}.KLD.p./DATA{ff}.PDF.p(:,:,tt)))); 
+					DATA{ff}.KLD.kld(tt) = nansum(nansum(DATA{ff}.KLD.p.*log2(DATA{ff}.KLD.p./(DATA{ff}.PDF.p(:,:,tt)+exp(-100))))); 
 				case exp(1)
-					DATA{ff}.KLD.kld(tt) = nansum(nansum(DATA{ff}.KLD.p.*log(DATA{ff}.KLD.p./DATA{ff}.PDF.p(:,:,tt))));
+					DATA{ff}.KLD.kld(tt) = nansum(nansum(DATA{ff}.KLD.p.*log(DATA{ff}.KLD.p./(DATA{ff}.PDF.p(:,:,tt)+exp(-100)))));
 				case 10
-					DATA{ff}.KLD.kld(tt) = nansum(nansum(DATA{ff}.KLD.p.*log10(DATA{ff}.KLD.p./DATA{ff}.PDF.p(:,:,tt))));
+					DATA{ff}.KLD.kld(tt) = nansum(nansum(DATA{ff}.KLD.p.*log10(DATA{ff}.KLD.p./(DATA{ff}.PDF.p(:,:,tt)+exp(-100)))));
 			end
 		end
 
@@ -276,11 +274,11 @@ for ff = 1:length(DATA)
 
 			switch optargs.logbase
 				case 2
-					DATA{ff}.KLD.mkld(mm) = nansum(nansum(DATA{ff}.KLD.p.*log2(DATA{ff}.KLD.p./P))); 
+					DATA{ff}.KLD.mkld(mm) = nansum(nansum(DATA{ff}.KLD.p.*log2(DATA{ff}.KLD.p./(P+exp(-100))))); 
 				case exp(1)
-					DATA{ff}.KLD.mkld(mm) = nansum(nansum(DATA{ff}.KLD.p.*log(DATA{ff}.KLD.p./P)));
+					DATA{ff}.KLD.mkld(mm) = nansum(nansum(DATA{ff}.KLD.p.*log(DATA{ff}.KLD.p./(P+exp(-100)))));
 				case 10
-					DATA{ff}.KLD.mkld(mm) = nansum(nansum(DATA{ff}.KLD.p.*log10(DATA{ff}.KLD.p./P)));
+					DATA{ff}.KLD.mkld(mm) = nansum(nansum(DATA{ff}.KLD.p.*log10(DATA{ff}.KLD.p./(P+exp(-100)))));
 			end
 		end
 	end

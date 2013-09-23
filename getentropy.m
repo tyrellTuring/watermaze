@@ -1,6 +1,6 @@
-function H = getentropy(DATA)
+function [H, S] = getentropy(DATA)
 
-% function H = getentropy(DATA)
+% function [H, S] = getentropy(DATA)
 %
 % Returns the entropy values for each trial and each animal in the structure DATA (see
 % below).
@@ -16,8 +16,10 @@ function H = getentropy(DATA)
 % OUTPUT:
 % -------------------------------------------------------------------------------------------------
 %
-%   H - A T x A matrix of proximities, or a T x A x 4 matrix (if 'allquads' was used, see help
+%   H - A T x A matrix of entropy estimates, or a T x A x P matrix (if P platforms were used, see help
 %       mwmentropy), where T is the maximum number of trials and A is the number of animals.
+%
+%   S - A 2 x 2 x T x A matrix of 2D standard deviations.
 % 
 %--------------------------------------------------------------------------------
 %
@@ -55,12 +57,17 @@ end
 
 % initialize
 H = zeros(max(ntrial),length(DATA),size(DATA{1}.H,2));
+S = zeros(2,2,max(ntrial),length(DATA),size(DATA{1}.H,2));
 
 % get the latencies from each animal's trials
 for aa = 1:length(DATA)
 	for tt = 1:DATA{aa}.ntrials
-		H(tt,aa,:) = DATA{aa}.H(tt,:);
+		for pp = 1:size(DATA{aa}.H,2)
+			H(tt,aa,pp) = DATA{aa}.H(tt,pp);
+			S(:,:,tt,aa,pp) = DATA{aa}.Sigma(:,:,tt,pp);
+		end
 	end
 end
 
 H = squeeze(H);
+S = squeeze(S);

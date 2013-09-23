@@ -115,8 +115,10 @@ for ff = 1:length(DATA)
 	% initialize H
 	if optargs.parametric && ~isempty(optargs.platforms)
 		DATA{ff}.H = zeros(DATA{ff}.ntrials,size(optargs.platforms,1));
+		DATA{ff}.Sigma = zeros(2,2,DATA{ff}.ntrials,size(optargs.platforms,1));
 	else
 		DATA{ff}.H = zeros(DATA{ff}.ntrials,1);
+		DATA{ff}.Sigma = zeros(2,2,DATA{ff}.ntrials);
 	end
 
 	% for each trial
@@ -137,8 +139,9 @@ for ff = 1:length(DATA)
 	
 			% for each platform...
 			for pp = 1:size(platforms,1)
-				H = calc_H(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platforms(pp,:), optargs.lambda);
+				[H, Sigma] = calc_H(DATA{ff}.path(1:DATA{ff}.ntimes(tt),:,tt), platforms(pp,:), optargs.lambda);
 				DATA{ff}.H(tt,pp) = H;
+				DATA{ff}.Sigma(:,:,tt,pp) = sqrt(Sigma);
 			end
 		else
 			DATA{ff}.H(tt) = -nansum(nansum(DATA{ff}.PDF.p(:,:,tt).*log(DATA{ff}.PDF.p(:,:,tt))));
@@ -149,12 +152,12 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SUB-FUNCTION
 %
-% function H = calc_H(path, platform, lambda)
+% function [H, Sigma] = calc_H(path, platform, lambda)
 %
 % Calculates the entropy measure, H, for the given platform location and the given 
 % mixture coefficient, lambda.
 %
-function H = calc_H(path, platform, lambda)
+function [H, Sigma] = calc_H(path, platform, lambda)
 
 % calculate the distance of the animal from the platform and the mean path location at each timestep
 Dx = path(:,2) - platform(1);
