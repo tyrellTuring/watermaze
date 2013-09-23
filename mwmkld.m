@@ -211,8 +211,7 @@ for ff = 1:length(DATA)
 					case exp(1)
 						DATA{ff}.KLD{pp}.mkld(mm) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log(DATA{ff}.KLD{pp}.p./(P+exp(-100)))));
 					case 10
-						DATA{ff}.KLD{pp}.mkld(mm) =
-nansum(nansum(DATA{ff}.KLD{pp}.p.*log10(DATA{ff}.KLD{pp}.p./(P)));
+						DATA{ff}.KLD{pp}.mkld(mm) = nansum(nansum(DATA{ff}.KLD{pp}.p.*log10(DATA{ff}.KLD{pp}.p./(P+exp(-100)))));
 				end
 			end
 		end
