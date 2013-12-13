@@ -54,12 +54,12 @@ for aa = 1:length(DATA)
 end 
 
 % initialize
-Q = zeros(max(ntrial),length(DATA),size(DATA{1}.Q,2));
+Q = zeros(max(ntrial),length(DATA),size(DATA{1}.Q,2),size(DATA{1}.Q,3));
 
-% get the latencies from each animal's trials
+% get the quadrant data from each animal's trials
 for aa = 1:length(DATA)
 	for tt = 1:DATA{aa}.ntrials
-		Q(tt,aa,:) = DATA{aa}.Q(tt,:);
+		Q(tt,aa,:,:) = DATA{aa}.Q(tt,:,:);
 	end
 end
 

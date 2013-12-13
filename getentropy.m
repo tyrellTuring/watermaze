@@ -57,14 +57,14 @@ end
 
 % initialize
 H = zeros(max(ntrial),length(DATA),size(DATA{1}.H,2));
-S = zeros(2,2,max(ntrial),length(DATA),size(DATA{1}.H,2));
+S = zeros(max(ntrial),length(DATA),size(DATA{1}.H,2));
 
 % get the latencies from each animal's trials
 for aa = 1:length(DATA)
 	for tt = 1:DATA{aa}.ntrials
 		for pp = 1:size(DATA{aa}.H,2)
 			H(tt,aa,pp) = DATA{aa}.H(tt,pp);
-			S(:,:,tt,aa,pp) = DATA{aa}.Sigma(:,:,tt,pp);
+			S(tt,aa,pp) = DATA{aa}.sig(tt,pp);
 		end
 	end
 end
