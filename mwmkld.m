@@ -33,6 +33,11 @@ function DATA = mwmkld(DATA,platforms,varargin);
 %              for pdfs averaged over the first and second, then the fourth and fifth trials. These
 %              KLD values are stored in the sub-vector mkld in the order they were requested. 
 %
+% - 'zones' : A matrix set of zones for which the probability of each zone will be calculated for each 
+%             set of platform pdfs. The zones should be an M x 3 matrix where M is the number of zones,
+%             the first column is X locations, the second column is Y locations and the third column
+%             is the radius of each zone. 
+%
 %--------------------------------------------------------------------------------
 %
 % 02/2013, Frankland Lab (www.franklandlab.com)
@@ -78,7 +83,8 @@ end
 optargs = struct('bandwidth',-1,...
                  'logbase',exp(1),...
                  'weights',ones(1,size(platforms,1)),...
-                 'means',{{}});
+                 'means',{{}},...
+								 'zones',[0,0,0]);
 
 % get the optional argument names
 optnames = fieldnames(optargs);
@@ -123,6 +129,12 @@ for pair = reshape(varargin,2,[])
 					optargs.(inpname) = pair{2};
 				else
 					error('means must be a cell array');
+				end
+			case 'zones'
+				if isa(pair{2},'numeric' && size(pair{2},2) == 3)
+					optargs.(inpname) = pair{2};
+				else
+					error('zones must be an M x 3 matrix');
 				end
 		end	
 	else
@@ -180,6 +192,14 @@ for ff = 1:length(DATA)
 
 			% store the results
 			DATA{ff}.KLD{pp}.p = P;
+
+			% calculate the zone proabilities if requested
+			if any(optargs.zones)
+				DATA{ff}.KLD{pp}.zones = zeros(size(optargs.zones,1),1);
+				for zz = 1:size(optargs.zones,1)
+					DATA{ff}.KLD{pp}.zones(zz) = nansum(nansum(DATA{ff}.KLD{pp}.p.*sqrt((optargs.zones(zz,1)-XX).^2 + (optargs.zones(zz,2)-YY).^2) < optargs.zones(zz,3)));
+				end
+			end
 
 			% for each trial, calcualte the KLD{pp}
 			DATA{ff}.KLD{pp}.kld = zeros(DATA{ff}.ntrials,1);
@@ -246,6 +266,14 @@ for ff = 1:length(DATA)
 
 		% store the results
 		DATA{ff}.KLD.p = P;
+
+		% calculate the zone proabilities if requested
+		if any(optargs.zones)
+			DATA{ff}.KLD.zones = zeros(size(optargs.zones,1),1);
+			for zz = 1:size(optargs.zones,1)
+				DATA{ff}.KLD.zones(zz) = nansum(nansum(DATA{ff}.KLD.p.*sqrt((optargs.zones(zz,1)-XX).^2 + (optargs.zones(zz,2)-YY).^2) < optargs.zones(zz,3)));
+			end
+		end
 
 		% for each trial, calcualte the KLD
 		DATA{ff}.KLD.kld = zeros(DATA{ff}.ntrials,1);
