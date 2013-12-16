@@ -131,7 +131,7 @@ for pair = reshape(varargin,2,[])
 					error('means must be a cell array');
 				end
 			case 'zones'
-				if isa(pair{2},'numeric' && size(pair{2},2) == 3)
+				if isa(pair{2},'numeric') && size(pair{2},2) == 3
 					optargs.(inpname) = pair{2};
 				else
 					error('zones must be an M x 3 matrix');
