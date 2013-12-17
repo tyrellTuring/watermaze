@@ -197,7 +197,7 @@ for ff = 1:length(DATA)
 			if any(optargs.zones)
 				DATA{ff}.KLD{pp}.zones = zeros(size(optargs.zones,1),1);
 				for zz = 1:size(optargs.zones,1)
-					DATA{ff}.KLD{pp}.zones(zz) = nansum(nansum(DATA{ff}.KLD{pp}.p.*sqrt((optargs.zones(zz,1)-XX).^2 + (optargs.zones(zz,2)-YY).^2) < optargs.zones(zz,3)));
+					DATA{ff}.KLD{pp}.zones(zz) = nansum(nansum(DATA{ff}.KLD{pp}.p.*(sqrt((optargs.zones(zz,1)-XX).^2 + (optargs.zones(zz,2)-YY).^2) < optargs.zones(zz,3))));
 				end
 			end
 
@@ -220,7 +220,7 @@ for ff = 1:length(DATA)
 			
 				% get the mean pdf for these trials
 				allP = zeros(size(DATA{ff}.PDF.p,1),size(DATA{ff}.PDF.p,2),length(optargs.means));
-				for tt = 1:length(optargs.means{mm})
+				for tt = 1:min(length(optargs.means{mm}),size(DATA{ff}.PDF.p,3))
 					allP(:,:,tt) = DATA{ff}.PDF.p(:,:,optargs.means{mm}(tt));
 				end
 				P = nanmean(allP,3);
@@ -271,7 +271,7 @@ for ff = 1:length(DATA)
 		if any(optargs.zones)
 			DATA{ff}.KLD.zones = zeros(size(optargs.zones,1),1);
 			for zz = 1:size(optargs.zones,1)
-				DATA{ff}.KLD.zones(zz) = nansum(nansum(DATA{ff}.KLD.p.*sqrt((optargs.zones(zz,1)-XX).^2 + (optargs.zones(zz,2)-YY).^2) < optargs.zones(zz,3)));
+				DATA{ff}.KLD.zones(zz) = nansum(nansum(DATA{ff}.KLD.p.*(sqrt((optargs.zones(zz,1)-XX).^2 + (optargs.zones(zz,2)-YY).^2) < optargs.zones(zz,3))));
 			end
 		end
 
