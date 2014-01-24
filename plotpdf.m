@@ -28,7 +28,7 @@ function [sh P] = plotpdf(DATA,trials,animals,varargin)
 %   'show_kldpdf' - Boolean value, determines whether to show the pdf used for the KLD calculation
 %                   rather than animal's paths. Default = false.
 %
-%   'kld_num'   - To be used with 'show_kldpdf', determines which number of kld pdf to plot.
+%   'kld_num'   - To be used with 'show_kldpdf', determines which number of kld pdf or diff to plot.
 %
 %   'show_axis' - Boolean value, determines whether the spatial axis is shown. Default = false.
 %
@@ -49,6 +49,11 @@ function [sh P] = plotpdf(DATA,trials,animals,varargin)
 %
 %   'climit'    - Two-element vector, [CMIN, CMAX] specifying the colour axis limits. Default =
 %                 [0 max(PDF)].
+%
+%   'show_path' - Boolean value, determines if path is plotted on top of colour map. Default = false.
+%
+%   'show_diff' - Boolean value, determines whether to show the path pdf or the logarithmic ratio
+%                 between the path and the target distribution. Default = false.
 %
 %--------------------------------------------------------------------------------
 %
@@ -91,7 +96,9 @@ optargs = struct('show_axis',false,...
                  'plat_colour',[],...
                  'crosshair',false,...
                  'cmap','jet',...
-                 'climit',NaN);
+                 'climit',NaN,...
+								 'show_path',false,...
+								 'show_diff',false);
 
 % get the optional argument names
 optnames = fieldnames(optargs);
@@ -168,10 +175,22 @@ for pair = reshape(varargin,2,[])
 					error('cmap must be a string of the colormap name');
 				end
 			case 'climit'
-				if isa(pair{2},numeric) && length(pair{2}) == 2
+				if isa(pair{2},'numeric') && length(pair{2}) == 2
 					optargs.(inpname) = pair{2};
 				else
 					error('climit must be a two-element vector');
+				end
+			case 'show_path'
+				if isa(pair{2},'logical')
+					optargs.(inpname) = pair{2};
+				else
+					error('show_path must be a Boolean value');
+				end
+			case 'show_diff'
+				if isa(pair{2},'logical')
+					optargs.(inpname) = pair{2};
+				else
+					error('show_path must be a Boolean value');
 				end
 		end	
 	else
@@ -217,6 +236,15 @@ else
 			else
 				P = nanvar(varanim,[],3);
 			end
+	end
+end
+
+% see whether we're going to show the difference
+if optargs.show_diff
+	if isa(DATA{1}.KLD,'cell')
+		P = DATA{1}.KLD{optargs.kld_num}.p.*log(DATA{1}.KLD{optargs.kld_num}.p./P);
+	else	
+		P = DATA{1}.KLD.p.*log(DATA{1}.KLD.p./P);
 	end
 end
 
@@ -291,3 +319,13 @@ if optargs.crosshair
 	plot3([-DATA{1}.pool(3) DATA{1}.pool(3)],[0 0],[max(P(:))*1.1 max(P(:))*1.1],'w--','LineWidth',2);
 	plot3([0 0],[-DATA{1}.pool(3) DATA{1}.pool(3)],[max(P(:))*1.1 max(P(:))*1.1],'w--','LineWidth',2);
 end
+
+if optargs.show_path
+	for aa = 1:length(animals)
+		for tt = 1:length(trials)
+			plot3(DATA{animals(aa)}.path(:,2,trials(tt)),DATA{animals(aa)}.path(:,3,trials(tt)),repmat([max(P(:))*1.1],size(DATA{animals(aa)}.path,1),1),'k-','LineWidth',1);
+		end
+	end
+end
+
+hold off;
