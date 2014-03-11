@@ -1,6 +1,6 @@
-function [GI,GVAR,GVAL] = getanovagroup(STUDY,gv,dnum,excl)
+function [GI,GVAR,GVAL] = getanovagroup(STUDY,gv,dnum,excl,qual)
 
-% function [GI,GVAR,GVAL] = getanovagroup(STUDY,GROUPVALS,[DATANUM,EXCLUDE])
+% function [GI,GVAR,GVAL] = getanovagroup(STUDY,GROUPVALS,[DATANUM,EXCLUDE,QUALITY])
 %
 % Returns a vector of animal indices, GI, and cell arrays of group variables, GVAR, and values, 
 % GVAL, that can be used in the function anovan (which is part of the Matlab Stats package). 
@@ -18,6 +18,9 @@ function [GI,GVAR,GVAL] = getanovagroup(STUDY,gv,dnum,excl)
 %
 % If certain animals should be excluded they can be identified via their unique animal IDs, passed
 % in as a cell array EXCLUSION. (None are excluded by default).
+%
+% If animals should be excluded based on a minimum quality of data rating (e.g. from histology)
+% pass in the minimum quality rating, QUALITY. (All quality levels are included by default.) 
 %
 %--------------------------------------------------------------------------------
 %
@@ -53,6 +56,7 @@ if ~isa(gv,'cell')
 end
 if nargin < 3, dnum = 1;  end;
 if nargin < 4, excl = {}; end;
+if nargin < 5, qual = -1; end;
 
 % get all the unique groups in the study
 UG = getuniquegroups(STUDY);
@@ -74,7 +78,7 @@ for uu = 1:size(UG,1)
 		end
 	end
 	if usegroup
-		[gdi, gsi] = getgroup(STUDY,G,dnum,excl);
+		[gdi, gsi] = getgroup(STUDY,G,dnum,excl,qual);
 		GI = [GI, gdi];
 		GS = [GS, gsi];
 	end

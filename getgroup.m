@@ -1,6 +1,6 @@
-function [GD, GS] = getgroup(STUDY,gv,dnum,excl,disj)
+function [GD, GS] = getgroup(STUDY,gv,dnum,excl,qual,disj)
 
-% function [GD, GS] = getgroup(STUDY,GROUPVALS,[DATANUM,EXCLUDE,DISJUNCTION])
+% function [GD, GS] = getgroup(STUDY,GROUPVALS,[DATANUM,EXCLUDE,MINQUALITY,DISJUNCTION])
 %
 % Returns two vectors, GS and GD, of indices to the data for animals in STUDY who belong to the 
 % group determined by the values passed in GROUPVALS. GROUPVALS must be a cell array listing the 
@@ -15,6 +15,9 @@ function [GD, GS] = getgroup(STUDY,gv,dnum,excl,disj)
 %
 % If certain animals should be excluded they can be identified via their unique animal IDs, passed
 % in as a cell array EXCLUSION. (None are excluded by default).
+%
+% If animals should be excluded based on a minimum quality of data rating (e.g. from histology)
+% pass in the minimum quality rating, QUALITY. (All quality levels are included by default.) 
 %
 % If the disjunction of the groups is desired, the optional argument 'DISJUNCTION' can be passed 
 % in as true (it is false by default).
@@ -55,7 +58,8 @@ if ~isa(gv,'cell')
 end
 if nargin < 3, dnum = 1; end;
 if nargin < 4, excl = {}; end;
-if nargin < 5, disj = false; end;
+if nargin < 5, qual = -1; end;
+if nargin < 6, disj = false; end;
 
 % initialize a boolean matrix for logical operations
 ingroup = false(STUDY.ANIMAL.n,length(STUDY.ANIMAL.GROUP.vars));
@@ -72,7 +76,7 @@ end
 % get a logical vector of the exclusions
 exclude = false(length(STUDY.ANIMAL.id),1);
 for aa = 1:length(STUDY.ANIMAL.id)
-	if ismember(STUDY.ANIMAL.id{aa},excl), exclude(aa) = true; end;
+	if ismember(STUDY.ANIMAL.id{aa},excl) || STUDY.ANIMAL.quality(aa) < qual, exclude(aa) = true; end;
 end
 
 % calculate the logical conjunction or disjunction of the groups

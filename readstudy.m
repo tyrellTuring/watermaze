@@ -19,6 +19,7 @@ function [STUDY,DATA] = readstudy(fname,datadir,varargin)
 %                     - 'Animal'
 %                     - *'Sex'
 %                     - *'DOB'
+%                     - *'Quality'       (quality rating on this data, e.g. for exclusion by histology)
 %                     - *'GROUP VAR 1'
 %                     - *'GROUP VAR 2'
 %                     - *'GROUP VAR ...' (there can be any number of group variables, can't be 'File')
@@ -77,6 +78,8 @@ function [STUDY,DATA] = readstudy(fname,datadir,varargin)
 %                         'track_sex' below.
 %   STUDY.ANIMAL.dob   - The dob of the animals. This is an optional field, see the optional input
 %                         'track_dob' below.
+%   STUDY.ANIMAL.quality   - The quality rating for this animal's data, e.g. used to do exclusion
+%                            of subjects following histology.
 %
 %   STUDY.FILE.directory   - The directory where all the data files for this study are stored (as
 %                             passed in by the user).
@@ -163,7 +166,8 @@ optargs = struct('centre_origin',true,...
                  'scale_data',true,...
                  'flip_data',true,...
                  'track_sex',false,...
-                 'track_dob',false);
+                 'track_dob',false,...
+                 'track_quality',false);
 
 % get the optional argument names
 optnames = fieldnames(optargs);
@@ -220,6 +224,12 @@ for pair = reshape(varargin,2,[])
 					optargs.(inpname) = pair{2};
 				else
 					error('track_dob must be a logical');
+				end
+			case 'track_quality'
+				if isa(pair{2},'logical')
+					optargs.(inpname) = pair{2};
+				else
+					error('track_quality must be a logical');
 				end
 		end	
 	else
@@ -292,6 +302,13 @@ if optargs.track_dob
 	for tt = 1:size(raw,1)-1
 		STUDY.ANIMAL.dob{tt} = datestr(x2mdate(cell2mat(raw(tt+1,cc))),'dd mmmm yyyy');
 	end
+	cc = cc + 1;
+end
+
+% if requested, get each animal's data quality rating
+if optargs.track_quality
+	if strcmpi(raw(1,cc),'Quality') ~= 1, error('Column after ''Animal'',''Sex'' or ''DOB'' must be ''Quality'''); end;
+	STUDY.ANIMAL.quality = cell2mat(raw(2:end,cc));
 	cc = cc + 1;
 end
 
